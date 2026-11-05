@@ -1,0 +1,12 @@
+[Unit]
+Description=Weekly check for background-check / consumer-report records due
+
+[Timer]
+# Fire once a week (Monday 10:00). The tool itself decides what's actually
+# due based on each source's cadence, so a weekly wake-up is plenty.
+OnCalendar=Mon *-*-* 10:00:00
+# If the machine was off at the scheduled time, run at next boot.
+Persistent=true
+
+[Install]
+WantedBy=timers.target

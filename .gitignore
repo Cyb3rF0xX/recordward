@@ -1,0 +1,19 @@
+# Personal / generated at runtime - never commit.
+# (Real data lives in the per-OS app dir; these only appear if someone points
+#  RECORDWARD_HOME at the repo.)
+requests.log
+history.log
+dashboard.demo.html
+
+# Python build / packaging artifacts
+__pycache__/
+*.pyc
+build/
+dist/
+*.egg-info/
+.venv/
+
+# Editor / OS noise
+*.swp
+*~
+.DS_Store

@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "recordward"
+version = "1.0.0"
+description = "Regularly request your own background-check / consumer-report records (US / FCRA) - local and private."
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.9"
+keywords = ["fcra", "credit-report", "background-check", "privacy", "reminder"]
+classifiers = [
+    "Environment :: Console",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Topic :: Utilities",
+]
+# Zero runtime dependencies - standard library only, on purpose.
+dependencies = []
+
+# Optional: a polished native desktop window for the launcher/first-run wizard.
+# The CLI and `recordward serve` never need this.
+[project.optional-dependencies]
+app = ["pywebview>=4"]
+
+[project.urls]
+Homepage = "https://github.com/Cyb3rF0xX/recordward"
+Source = "https://github.com/Cyb3rF0xX/recordward"
+
+[project.scripts]
+recordward = "recordward.core:_console_main"
+
+[tool.setuptools]
+packages = ["recordward"]

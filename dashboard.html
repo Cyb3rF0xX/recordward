@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Records Dashboard — recordward</title>
+<style>
+  :root {
+    --bg: #0f1115; --panel: #171a21; --panel2: #1e222b;
+    --text: #e6e8ec; --muted: #9aa3b2; --line: #2a2f3a;
+    --due: #ff6b6b; --ok: #4ade80; --accent: #5aa9ff;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 15px/1.5 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  }
+  header {
+    padding: clamp(18px, 3vw, 28px) clamp(14px, 4vw, 40px) 16px;
+    border-bottom: 1px solid var(--line);
+    position: sticky; top: 0; background: var(--bg); z-index: 5;
+  }
+  @media (max-width: 480px) {
+    h1 { font-size: 18px; }
+    .controls button { flex: 1; }  /* full-width, even buttons on phones */
+  }
+  h1 { margin: 0 0 4px; font-size: 20px; }
+  .sub { color: var(--muted); font-size: 13px; }
+  .summary {
+    margin-top: 10px; font-weight: 600;
+    color: var(--due);
+  }
+  .controls { margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap; }
+  .controls button {
+    background: var(--panel2); color: var(--text); border: 1px solid var(--line);
+    padding: 7px 14px; border-radius: 8px; cursor: pointer; font-size: 13px;
+    font-weight: 600; transition: background .12s, color .12s, border-color .12s;
+  }
+  .controls button:hover { border-color: var(--accent); }
+  /* Clearly show which view you're in: filled accent, not just a tint. */
+  .controls button.active {
+    background: var(--accent); color: #06101f; border-color: var(--accent);
+  }
+  main {
+    display: grid; gap: 16px;
+    padding: 20px clamp(14px, 4vw, 40px) 60px;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+    width: 100%; max-width: 1400px; margin: 0 auto;
+  }
+  .card {
+    background: var(--panel); border: 1px solid var(--line);
+    border-radius: 12px; padding: 16px; display: flex; flex-direction: column;
+  }
+  .card.due { border-color: color-mix(in srgb, var(--due) 55%, var(--line)); }
+  .card-head { display: flex; justify-content: space-between; gap: 8px;
+    align-items: flex-start; }
+  .card-head h2 { margin: 0; font-size: 15px; }
+  .badge {
+    font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 999px;
+    white-space: nowrap; letter-spacing: .02em;
+  }
+  .badge.due { background: color-mix(in srgb, var(--due) 22%, transparent);
+    color: var(--due); }
+  .badge.ok { background: color-mix(in srgb, var(--ok) 18%, transparent);
+    color: var(--ok); }
+  .meta { display: flex; gap: 14px; flex-wrap: wrap; color: var(--muted);
+    font-size: 12px; margin: 10px 0 6px; }
+  .note { color: var(--muted); font-size: 13px; margin: 2px 0 10px; }
+  details { background: var(--panel2); border: 1px solid var(--line);
+    border-radius: 8px; padding: 6px 12px; margin-bottom: 12px; }
+  summary { cursor: pointer; font-weight: 600; font-size: 13px; padding: 4px 0; }
+  details ol { margin: 8px 0 4px; padding-left: 20px; }
+  details li { margin: 6px 0; font-size: 13px; color: var(--text); }
+  code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 12px; }
+  .actions { margin-top: auto; display: flex; flex-direction: column; gap: 8px; }
+  .btn {
+    display: inline-block; text-align: center; text-decoration: none;
+    background: var(--accent); color: #06101f; font-weight: 700;
+    padding: 9px 14px; border-radius: 8px;
+  }
+  .btn:hover { filter: brightness(1.08); }
+  button.btn { border: none; cursor: pointer; font: inherit; }
+  .btn-row { display: flex; gap: 8px; }
+  .btn-row .btn { flex: 1; }
+  .btn-ghost { background: var(--panel2); color: var(--text);
+    border: 1px solid var(--line) !important; }
+  .btn-ghost:hover { border-color: var(--accent) !important; }
+  .done-hint { color: var(--muted); background: var(--bg);
+    border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px;
+    user-select: all; }
+  footer { color: var(--muted); font-size: 12px; text-align: center;
+    padding: 0 24px 40px; }
+  footer a { color: var(--accent); }
+  .demo-banner { background: color-mix(in srgb, var(--accent) 18%, transparent);
+    color: var(--accent); border: 1px solid var(--accent); border-radius: 8px;
+    padding: 8px 12px; margin-top: 12px; font-size: 12px; font-weight: 600; }
+  .panel { margin-top: 14px; padding: 14px; background: var(--panel);
+    border: 1px solid var(--line); border-radius: 10px; max-width: 520px; }
+  .panel h3 { margin: 6px 0 8px; font-size: 14px; }
+  .panel label { display: block; margin: 8px 0; font-size: 13px;
+    color: var(--muted); }
+  .panel label.row { display: flex; align-items: center; gap: 8px; }
+  .panel input[type=number] { width: 90px; margin-left: 8px; background: var(--bg);
+    color: var(--text); border: 1px solid var(--line); border-radius: 6px;
+    padding: 4px 6px; }
+  .panel .warn { color: var(--due); font-size: 12px; margin: 4px 0; }
+  .reset-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .btn-danger { background: var(--due) !important; color: #1a0606 !important; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Records Dashboard</h1>
+  <div class="sub">Request your own background-check / consumer-report records (US · FCRA)</div>
+  <div class="summary">4 of 10 source(s) due</div>
+  <div class="controls">
+    <button data-filter="due" class="active">Due now</button>
+    <button data-filter="all">All sources</button>
+    
+  </div>
+  <div class="demo-banner">SAMPLE — generated from dummy data, not a real request history. Run the tool yourself to get live status.</div>
+  
+</header>
+<main id="cards">
+  <section class="card due" data-due="true" data-name="Equifax (AnnualCreditReport)">
+    <div class="card-head">
+      <h2>Equifax (AnnualCreditReport)</h2>
+      <span class="badge due">DUE · never requested</span>
+    </div>
+    <div class="meta">
+      <span>every 30d</span>
+      <span>last requested: never</span>
+    </div>
+    <p class="note">Pull full report; review the Inquiries section.</p>
+    <details open>
+      <summary>What to do here</summary>
+      <ol>
+      <li>Open the site and choose to request your report (you can do all three bureaus, but this card is for one — pull the matching one).</li>
+      <li>Verify your identity (SSN, DOB, address; they may ask security questions).</li>
+      <li>Open the report and go straight to the <b>Inquiries</b> section.</li>
+      <li>Look under <b>soft / promotional / employment inquiries</b> for any name you don't recognize or any employer/screener.</li>
+      <li>Save or screenshot the inquiries list so you can compare next time.</li>
+      <li>Reports are free weekly, so pulling often is fine and never hurts your score.</li>
+      </ol>
+    </details>
+    <div class="actions">
+      <a class="btn" href="https://www.annualcreditreport.com" target="_blank" rel="noopener noreferrer">Open site ↗</a>
+      <code class="done-hint">python3 recordward.py done "Equifax (AnnualCreditReport)"</code>
+    </div>
+  </section>
+  <section class="card due" data-due="true" data-name="LexisNexis Consumer Disclosure Report">
+    <div class="card-head">
+      <h2>LexisNexis Consumer Disclosure Report</h2>
+      <span class="badge due">DUE · never requested</span>
+    </div>
+    <div class="meta">
+      <span>every 90d</span>
+      <span>last requested: never</span>
+    </div>
+    <p class="note">Free FCRA disclosure. Consider also placing a security freeze.</p>
+    <details open>
+      <summary>What to do here</summary>
+      <ol>
+      <li>Open the consumer disclosure request page.</li>
+      <li>Submit a <b>Full File Disclosure</b> request (free under FCRA).</li>
+      <li>Verify your identity; the report usually arrives by mail/secure delivery, not instantly.</li>
+      <li>When it arrives, review it for background/employment data and any recipients listed.</li>
+      <li>Optional but recommended: place a <b>LexisNexis security freeze</b> while you're there.</li>
+      </ol>
+    </details>
+    <div class="actions">
+      <a class="btn" href="https://consumer.risk.lexisnexis.com/request" target="_blank" rel="noopener noreferrer">Open site ↗</a>
+      <code class="done-hint">python3 recordward.py done "LexisNexis Consumer Disclosure Report"</code>
+    </div>
+  </section>
+  <section class="card due" data-due="true" data-name="HireRight (file request)">
+    <div class="card-head">
+      <h2>HireRight (file request)</h2>
+      <span class="badge due">DUE · never requested</span>
+    </div>
+    <div class="meta">
+      <span>every 180d</span>
+      <span>last requested: never</span>
+    </div>
+    <p class="note">Request file disclosure + recipient list.</p>
+    <details open>
+      <summary>What to do here</summary>
+      <ol>
+      <li>Open the vendor's consumer / candidate portal (link below).</li>
+      <li>Request a <b>copy of your file disclosure</b> (free under FCRA).</li>
+      <li>Also request the <b>list of recipients in the past 2 years</b> — FCRA entitles you to know who pulled a report on you for employment purposes.</li>
+      <li>Verify your identity as prompted.</li>
+      <li>When the file arrives, check it for accuracy and for any recipient you don't recognize.</li>
+      <li>If anything is wrong, use their <b>dispute</b> process to correct it.</li>
+      </ol>
+    </details>
+    <div class="actions">
+      <a class="btn" href="https://www.hireright.com/legal/consumer-rights" target="_blank" rel="noopener noreferrer">Open site ↗</a>
+      <code class="done-hint">python3 recordward.py done "HireRight (file request)"</code>
+    </div>
+  </section>
+  <section class="card due" data-due="true" data-name="CFPB list of consumer reporting companies">
+    <div class="card-head">
+      <h2>CFPB list of consumer reporting companies</h2>
+      <span class="badge due">DUE · never requested</span>
+    </div>
+    <div class="meta">
+      <span>every 365d</span>
+      <span>last requested: never</span>
+    </div>
+    <p class="note">Scan for any new specialty/employment screener to add above.</p>
+    <details open>
+      <summary>What to do here</summary>
+      <ol>
+      <li>Open the CFPB list of consumer reporting companies.</li>
+      <li>Scan the <b>Employment Screening</b> and specialty sections.</li>
+      <li>Note any screener you recognize (e.g. one an employer used) that isn't already in your schedule.</li>
+      <li>Add it as a new source in <code>schedule.yaml</code> so it gets tracked.</li>
+      </ol>
+    </details>
+    <div class="actions">
+      <a class="btn" href="https://www.consumerfinance.gov/consumer-tools/credit-reports-and-scores/consumer-reporting-companies/" target="_blank" rel="noopener noreferrer">Open site ↗</a>
+      <code class="done-hint">python3 recordward.py done "CFPB list of consumer reporting companies"</code>
+    </div>
+  </section>
+  <section class="card" data-due="false" data-name="Experian (AnnualCreditReport)">
+    <div class="card-head">
+      <h2>Experian (AnnualCreditReport)</h2>
+      <span class="badge ok">OK · next 2026-11-24</span>
+    </div>
+    <div class="meta">
+      <span>every 30d</span>
+      <span>last requested: 2026-10-25</span>
+    </div>
+    <p class="note">Pull full report; review the Inquiries section.</p>
+    <details>
+      <summary>What to do here</summary>
+      <ol>
+      <li>Open the site and choose to request your report (you can do all three bureaus, but this card is for one — pull the matching one).</li>
+      <li>Verify your identity (SSN, DOB, address; they may ask security questions).</li>
+      <li>Open the report and go straight to the <b>Inquiries</b> section.</li>
+      <li>Look under <b>soft / promotional / employment inquiries</b> for any name you don't recognize or any employer/screener.</li>
+      <li>Save or screenshot the inquiries list so you can compare next time.</li>
+      <li>Reports are free weekly, so pulling often is fine and never hurts your score.</li>
+      </ol>
+    </details>
+    <div class="actions">
+      <a class="btn" href="https://www.annualcreditreport.com" target="_blank" rel="noopener noreferrer">Open site ↗</a>
+      <code class="done-hint">python3 recordward.py done "Experian (AnnualCreditReport)"</code>
+    </div>
+  </section>
+  <section class="card" data-due="false" data-name="TransUnion (AnnualCreditReport)">
+    <div class="card-head">
+      <h2>TransUnion (AnnualCreditReport)</h2>
+      <span class="badge ok">OK · next 2026-11-24</span>
+    </div>
+    <div class="meta">
+      <span>every 30d</span>
+      <span>last requested: 2026-10-25</span>
+    </div>
+    <p class="note">Pull full report; review the Inquiries section.</p>
+    <details>
+      <summary>What to do here</summary>
+      <ol>
+      <li>Open the site and choose to request your report (you can do all three bureaus, but this card is for one — pull the matching one).</li>
+      <li>Verify your identity (SSN, DOB, address; they may ask security questions).</li>
+      <li>Open the report and go straight to the <b>Inquiries</b> section.</li>
+      <li>Look under <b>soft / promotional / employment inquiries</b> for any name you don't recognize or any employer/screener.</li>
+      <li>Save or screenshot the inquiries list so you can compare next time.</li>
+      <li>Reports are free weekly, so pulling often is fine and never hurts your score.</li>
+      </ol>
+    </details>
+    <div class="actions">
+      <a class="btn" href="https://www.annualcreditreport.com" target="_blank" rel="noopener noreferrer">Open site ↗</a>
+      <code class="done-hint">python3 recordward.py done "TransUnion (AnnualCreditReport)"</code>
+    </div>
+  </section>
+  <section class="card" data-due="false" data-name="Checkr (file + 2yr recipients)">
+    <div class="card-head">
+      <h2>Checkr (file + 2yr recipients)</h2>
+      <span class="badge ok">OK · next 2027-03-04</span>
+    </div>
+    <div class="meta">
+      <span>every 180d</span>
+      <span>last requested: 2026-09-05</span>
+    </div>
+    <p class="note">Request file disclosure + recipient list.</p>
+    <details>
+      <summary>What to do here</summary>
+      <ol>
+      <li>Open the vendor's consumer / candidate portal (link below).</li>
+      <li>Request a <b>copy of your file disclosure</b> (free under FCRA).</li>
+      <li>Also request the <b>list of recipients in the past 2 years</b> — FCRA entitles you to know who pulled a report on you for employment purposes.</li>
+      <li>Verify your identity as prompted.</li>
+      <li>When the file arrives, check it for accuracy and for any recipient you don't recognize.</li>
+      <li>If anything is wrong, use their <b>dispute</b> process to correct it.</li>
+      </ol>
+    </details>
+    <div class="actions">
+      <a class="btn" href="https://candidate.checkr.com" target="_blank" rel="noopener noreferrer">Open site ↗</a>
+      <code class="done-hint">python3 recordward.py done "Checkr (file + 2yr recipients)"</code>
+    </div>
+  </section>
+  <section class="card" data-due="false" data-name="Sterling (file request)">
+    <div class="card-head">
+      <h2>Sterling (file request)</h2>
+      <span class="badge ok">OK · next 2027-03-04</span>
+    </div>
+    <div class="meta">
+      <span>every 180d</span>
+      <span>last requested: 2026-09-05</span>
+    </div>
+    <p class="note">Request file disclosure + recipient list.</p>
+    <details>
+      <summary>What to do here</summary>
+      <ol>
+      <li>Open the vendor's consumer / candidate portal (link below).</li>
+      <li>Request a <b>copy of your file disclosure</b> (free under FCRA).</li>
+      <li>Also request the <b>list of recipients in the past 2 years</b> — FCRA entitles you to know who pulled a report on you for employment purposes.</li>
+      <li>Verify your identity as prompted.</li>
+      <li>When the file arrives, check it for accuracy and for any recipient you don't recognize.</li>
+      <li>If anything is wrong, use their <b>dispute</b> process to correct it.</li>
+      </ol>
+    </details>
+    <div class="actions">
+      <a class="btn" href="https://www.sterlingcheck.com/contact/" target="_blank" rel="noopener noreferrer">Open site ↗</a>
+      <code class="done-hint">python3 recordward.py done "Sterling (file request)"</code>
+    </div>
+  </section>
+  <section class="card" data-due="false" data-name="First Advantage (file request)">
+    <div class="card-head">
+      <h2>First Advantage (file request)</h2>
+      <span class="badge ok">OK · next 2027-03-04</span>
+    </div>
+    <div class="meta">
+      <span>every 180d</span>
+      <span>last requested: 2026-09-05</span>
+    </div>
+    <p class="note">Request file disclosure + recipient list.</p>
+    <details>
+      <summary>What to do here</summary>
+      <ol>
+      <li>Open the vendor's consumer / candidate portal (link below).</li>
+      <li>Request a <b>copy of your file disclosure</b> (free under FCRA).</li>
+      <li>Also request the <b>list of recipients in the past 2 years</b> — FCRA entitles you to know who pulled a report on you for employment purposes.</li>
+      <li>Verify your identity as prompted.</li>
+      <li>When the file arrives, check it for accuracy and for any recipient you don't recognize.</li>
+      <li>If anything is wrong, use their <b>dispute</b> process to correct it.</li>
+      </ol>
+    </details>
+    <div class="actions">
+      <a class="btn" href="https://fadv.com/solutions/background-screening/consumer-center/" target="_blank" rel="noopener noreferrer">Open site ↗</a>
+      <code class="done-hint">python3 recordward.py done "First Advantage (file request)"</code>
+    </div>
+  </section>
+  <section class="card" data-due="false" data-name="Accurate Background (file request)">
+    <div class="card-head">
+      <h2>Accurate Background (file request)</h2>
+      <span class="badge ok">OK · next 2027-03-04</span>
+    </div>
+    <div class="meta">
+      <span>every 180d</span>
+      <span>last requested: 2026-09-05</span>
+    </div>
+    <p class="note">Request file disclosure + recipient list.</p>
+    <details>
+      <summary>What to do here</summary>
+      <ol>
+      <li>Open the vendor's consumer / candidate portal (link below).</li>
+      <li>Request a <b>copy of your file disclosure</b> (free under FCRA).</li>
+      <li>Also request the <b>list of recipients in the past 2 years</b> — FCRA entitles you to know who pulled a report on you for employment purposes.</li>
+      <li>Verify your identity as prompted.</li>
+      <li>When the file arrives, check it for accuracy and for any recipient you don't recognize.</li>
+      <li>If anything is wrong, use their <b>dispute</b> process to correct it.</li>
+      </ol>
+    </details>
+    <div class="actions">
+      <a class="btn" href="https://www.accurate.com/consumer/" target="_blank" rel="noopener noreferrer">Open site ↗</a>
+      <code class="done-hint">python3 recordward.py done "Accurate Background (file request)"</code>
+    </div>
+  </section>
+</main>
+<footer>
+  Generated 2026-11-04 20:17 from sample data (<code>--demo</code>).<br>
+  After you request a source, record it: <code>python3 recordward.py done "&lt;name&gt;"</code>, then regenerate.<br>This page reflects a snapshot — it does not update itself live.<br>
+  RecordWard — free software under the
+  <a href="https://github.com/Cyb3rF0xX/recordward" target="_blank" rel="noopener noreferrer">AGPLv3</a>
+  (<a href="https://github.com/Cyb3rF0xX/recordward" target="_blank" rel="noopener noreferrer">source</a>).
+</footer>
+<script>
+  // Filter buttons are the ones with a real filter value (not Settings).
+  const buttons = [...document.querySelectorAll('.controls button')]
+    .filter(b => b.dataset.filter === 'due' || b.dataset.filter === 'all');
+  const cards = () => document.querySelectorAll('#cards .card');
+  function apply(filter) {
+    cards().forEach(c => {
+      const due = c.dataset.due === 'true';
+      c.style.display = (filter === 'all' || due) ? '' : 'none';
+    });
+    buttons.forEach(b => b.classList.toggle('active', b.dataset.filter === filter));
+  }
+  buttons.forEach(b => b.addEventListener('click', () => apply(b.dataset.filter)));
+  apply('due');
+
+</script>
+</body>
+</html>

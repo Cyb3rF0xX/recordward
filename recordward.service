@@ -1,0 +1,10 @@
+[Unit]
+Description=Background-check / consumer-report records reminder
+Documentation=file:%h/recordward/README.md
+
+[Service]
+Type=oneshot
+# Edit this path if you move the tool.
+ExecStart=%h/recordward/notify.sh
+# So notify-send can reach your desktop session when run as a user service.
+Environment=DISPLAY=:0
