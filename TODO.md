@@ -26,6 +26,22 @@ Known work items, roughly prioritized. Not yet implemented.
   480x580 with a 380x480 minimum — revisit once card reflow is fixed, since
   the right default depends on how cards lay out.
 
+- [ ] **Design mockups (SVG).** Produce updated SVG mockups showing how the app
+  *should* look — the dashboard and the native launcher/first-run window — as
+  reference for the UI work above (card reflow, default window size, theming).
+  These are design artifacts, separate from the app icon/logo item. Keep them
+  in a `design/` or `docs/mockups/` folder and link them from the README.
+
+- [ ] **Theme settings (Light / Dark / color).** Add a user-selectable theme:
+  at minimum Light and Dark, ideally a custom accent color. Feasibility note:
+  the dashboard already themes entirely through CSS custom properties
+  (`--bg`, `--panel`, `--text`, `--muted`, `--line`, `--accent`, `--due`,
+  `--ok`), so this is mostly (a) defining a light palette for those vars,
+  (b) a `theme` setting (`dark` default / `light` / maybe `system`) persisted
+  in `settings.json`, and (c) a toggle in the Settings panel + the launcher.
+  Respect `prefers-color-scheme` for the `system` option. Make sure the chosen
+  theme applies to both the dashboard and the launcher window.
+
 ## Notes
 
 - These are tracked here so they survive across sessions. When implemented,
