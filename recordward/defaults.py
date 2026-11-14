@@ -12,66 +12,80 @@ DEFAULT_SCHEDULE_YAML = """\
 # recordward schedule (US / FCRA)
 #
 # Each entry is a source you request your records from on a rotation.
-# `every_days` is how often that source is due. The checker compares this
-# against the last time you logged a request (in requests.log) and tells
-# you what's due now.
+#   every_days  how often YOU want to be reminded (edit freely).
+#   min_days    the shortest interval the provider allows for a FREE request.
+#               The dashboard warns if every_days is lower than this, because
+#               an earlier request may be refused or charged. 0 = no known limit.
 #
-# Edit freely: change cadences, add/remove sources, fix URLs if a vendor
-# changes their consumer-disclosure page.
+# Basis: FCRA section 612(a) gives one free file disclosure per 12 months from
+# each nationwide credit bureau and nationwide specialty agency (365). The three
+# credit bureaus also offer free weekly reports through AnnualCreditReport.com
+# (a voluntary program, made permanent in 2023), so their limit is 7.
+# Provider policies change; check the card's links if a request is refused.
 
 sources:
   # --- Credit bureaus via the only federally authorized free site ---
   - name: "Equifax (AnnualCreditReport)"
     url: "https://www.annualcreditreport.com"
     every_days: 30
-    notes: "Pull full report; review the Inquiries section."
+    min_days: 7
+    notes: "Free weekly report. Review Inquiries; freeze, fraud alert and disputes are free."
 
   - name: "Experian (AnnualCreditReport)"
     url: "https://www.annualcreditreport.com"
     every_days: 30
-    notes: "Pull full report; review the Inquiries section."
+    min_days: 7
+    notes: "Free weekly report. Review Inquiries; freeze, fraud alert and disputes are free."
 
   - name: "TransUnion (AnnualCreditReport)"
     url: "https://www.annualcreditreport.com"
     every_days: 30
-    notes: "Pull full report; review the Inquiries section."
+    min_days: 7
+    notes: "Free weekly report. Review Inquiries; freeze, fraud alert and disputes are free."
 
   # --- Specialty bureau that backs a lot of screening data ---
   - name: "LexisNexis Consumer Disclosure Report"
     url: "https://consumer.risk.lexisnexis.com/request"
-    every_days: 90
-    notes: "Free FCRA disclosure. Consider also placing a security freeze."
+    every_days: 365
+    min_days: 365
+    notes: "One free disclosure per 12 months. Freeze is free; opt-out form available."
 
   # --- Employment screening companies (request your own file + recipients) ---
   - name: "Checkr (file + 2yr recipients)"
     url: "https://candidate.checkr.com"
-    every_days: 180
-    notes: "Request file disclosure + recipient list."
+    every_days: 365
+    min_days: 365
+    notes: "One free file disclosure per 12 months. Disputes are free (portal)."
 
   - name: "Sterling (file request)"
-    url: "https://www.sterlingcheck.com/contact/"
-    every_days: 180
-    notes: "Request file disclosure + recipient list."
+    url: "https://www.consumerfinance.gov/consumer-tools/credit-reports-and-scores/consumer-reporting-companies/companies-list/sterling-talent-solutions/"
+    every_days: 365
+    min_days: 365
+    notes: "One free file disclosure per 12 months. Contact details are on the CFPB listing."
 
   - name: "HireRight (file request)"
     url: "https://www.hireright.com/legal/consumer-rights"
-    every_days: 180
-    notes: "Request file disclosure + recipient list."
+    every_days: 365
+    min_days: 365
+    notes: "One free file disclosure per 12 months (includes DAC reports). Disputes are free."
 
   - name: "First Advantage (file request)"
-    url: "https://fadv.com/solutions/background-screening/consumer-center/"
-    every_days: 180
-    notes: "Request file disclosure + recipient list."
+    url: "https://fadv.com/candidates/free-report/"
+    every_days: 365
+    min_days: 365
+    notes: "One free copy per year. Disputes: 800-845-6004."
 
   - name: "Accurate Background (file request)"
-    url: "https://www.accurate.com/consumer/"
-    every_days: 180
-    notes: "Request file disclosure + recipient list."
+    url: "https://www.accurate.com/my-background-check/"
+    every_days: 365
+    min_days: 365
+    notes: "One free file disclosure per 12 months. Disputes are free (online form)."
 
   # --- Catch-all: the CFPB list of consumer reporting companies ---
   - name: "CFPB list of consumer reporting companies"
     url: "https://www.consumerfinance.gov/consumer-tools/credit-reports-and-scores/consumer-reporting-companies/"
     every_days: 365
+    min_days: 0
     notes: "Scan for any new specialty/employment screener to add above."
 """
 

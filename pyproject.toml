@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "recordward"
-version = "1.0.0"
+version = "1.1.0"
 description = "Regularly request your own background-check / consumer-report records (US / FCRA) - local and private."
 readme = "README.md"
 license = { file = "LICENSE" }
@@ -35,3 +35,7 @@ recordward = "recordward.core:_console_main"
 
 [tool.setuptools]
 packages = ["recordward"]
+
+# Ship the icon assets (SVG source + PNG/ICO) inside the installed package.
+[tool.setuptools.package-data]
+recordward = ["assets/*"]

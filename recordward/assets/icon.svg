@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="RecordWard">
+  <title>RecordWard</title>
+  <defs>
+    <linearGradient id="rw-shield" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#7cbcff"/>
+      <stop offset="1" stop-color="#3f8fe6"/>
+    </linearGradient>
+  </defs>
+  <!-- app tile -->
+  <rect x="16" y="16" width="480" height="480" rx="112" fill="#171a21" stroke="#2a2f3a" stroke-width="8"/>
+  <!-- shield: guard -->
+  <path d="M256 78 L404 132 V250 C404 342 343 402 256 440 C169 402 108 342 108 250 V132 Z"
+        fill="url(#rw-shield)"/>
+  <!-- file page: your record -->
+  <path d="M192 168 H290 L330 208 V332 H192 Z" fill="#0f1115"/>
+  <path d="M290 168 V208 H330 Z" fill="#2a2f3a"/>
+  <!-- check: verified -->
+  <path d="M218 262 L248 292 L304 228" fill="none" stroke="#4ade80" stroke-width="24"
+        stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

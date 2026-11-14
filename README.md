@@ -1,3 +1,5 @@
+<p align="center"><img src="recordward/assets/icon-128.png" alt="RecordWard logo" width="96" height="96"></p>
+
 # RecordWard
 
 **Guard your own file.**
@@ -53,6 +55,12 @@ Your **data** (schedule, logs, settings) lives in a per-OS app directory, not in
 this folder — run `recordward where` to see exactly where.
 
 ## Install
+
+**No Python?** Download the app for Windows, macOS or Linux from
+the [Releases page](https://github.com/Cyb3rF0xX/recordward/releases)
+(preview builds; see [INSTALL.md](INSTALL.md) for first-run warnings).
+
+With Python 3.9+:
 
 ```bash
 pipx install git+https://github.com/Cyb3rF0xX/recordward

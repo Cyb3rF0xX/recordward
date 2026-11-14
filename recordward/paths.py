@@ -74,6 +74,11 @@ def log_file() -> Path:
     return data_dir() / "requests.log"
 
 
+def app_log_file() -> Path:
+    """Error log for the app window (see applog.py)."""
+    return data_dir() / "recordward-app.log"
+
+
 def history_file() -> Path:
     return data_dir() / "history.log"
 

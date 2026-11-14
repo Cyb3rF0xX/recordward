@@ -88,38 +88,166 @@ def today() -> dt.date:
     return dt.date.today()
 
 
+def _a(url: str, text: str) -> str:
+    """Safe external link for the (trusted, constant) step text below."""
+    return f'<a href="{url}" target="_blank" rel="noopener noreferrer">{text}</a>'
+
+
+_ACR = _a("https://www.annualcreditreport.com", "AnnualCreditReport.com")
+_IDT = _a("https://www.identitytheft.gov", "IdentityTheft.gov")
+_OPTOUT = _a("https://www.optoutprescreen.com", "OptOutPrescreen.com")
+
+_RECIPIENTS = (
+    "Ask for the <b>list of recipients</b>: the FCRA entitles you to know who "
+    "received a report on you in the past <b>2 years for employment</b> "
+    "purposes and the past <b>1 year for any other purpose</b>."
+)
+_DISPUTE_GENERIC = (
+    "<b>Dispute</b> anything wrong, incomplete or unrecognized. Disputes are "
+    "free, the company must investigate (generally within 30 days), and you "
+    "should keep dated copies of everything you send."
+)
+
+
+def _bureau_steps(bureau: str, freeze_url: str) -> list[str]:
+    return [
+        f"<b>Request:</b> open {_ACR} and pull the <b>{bureau}</b> report. "
+        "This card is for one bureau.",
+        "Verify your identity (SSN, DOB, address; you may get security "
+        "questions).",
+        "Go straight to the <b>Inquiries</b> section and look for any name or "
+        "employer/screener you don't recognize.",
+        "Save or screenshot the inquiries list to compare next time. Reports "
+        "are free weekly, and checking never hurts your score.",
+        f"{_DISPUTE_GENERIC} Use the dispute link on {bureau}'s own site or "
+        "report.",
+        f"<b>Freeze:</b> a security freeze is free by federal law and lifting "
+        f"it is free too. {_a(freeze_url, 'Place or lift it at ' + bureau)}.",
+        f"<b>Fraud alert:</b> free. A 1-year alert needs only a request; a "
+        f"7-year extended alert needs an identity theft report from {_IDT}. "
+        "Placing one at a bureau passes it to the other two.",
+        f"<b>Opt out</b> of prescreened credit/insurance offers at {_OPTOUT}.",
+    ]
+
+
 # --------------------------------------------------------------------------
 # Per-source step-by-step instructions for the dashboard. Keyed by a
 # substring of the source name so it keeps working if you lightly rename a
 # source in schedule.yaml. First matching key wins; order matters.
+# Each list covers: request, review, dispute, and (where offered) freeze /
+# opt-out. Free-request limits live in schedule.yaml as `min_days`.
 # --------------------------------------------------------------------------
 INSTRUCTIONS: list[tuple[str, list[str]]] = [
     (
+        "Equifax",
+        _bureau_steps(
+            "Equifax",
+            "https://www.equifax.com/personal/credit-report-services/credit-freeze/",
+        ),
+    ),
+    (
+        "Experian",
+        _bureau_steps("Experian", "https://www.experian.com/freeze/center.html"),
+    ),
+    (
+        "TransUnion",
+        _bureau_steps("TransUnion", "https://www.transunion.com/credit-freeze"),
+    ),
+    # Renamed/other bureau entries that still use the shared site.
+    (
         "AnnualCreditReport",
-        [
-            "Open the site and choose to request your report (you can do all "
-            "three bureaus, but this card is for one — pull the matching one).",
-            "Verify your identity (SSN, DOB, address; they may ask security "
-            "questions).",
-            "Open the report and go straight to the <b>Inquiries</b> section.",
-            "Look under <b>soft / promotional / employment inquiries</b> for "
-            "any name you don't recognize or any employer/screener.",
-            "Save or screenshot the inquiries list so you can compare next time.",
-            "Reports are free weekly, so pulling often is fine and never hurts "
-            "your score.",
-        ],
+        _bureau_steps("the matching bureau", "https://www.annualcreditreport.com"),
     ),
     (
         "LexisNexis",
         [
-            "Open the consumer disclosure request page.",
-            "Submit a <b>Full File Disclosure</b> request (free under FCRA).",
-            "Verify your identity; the report usually arrives by mail/secure "
-            "delivery, not instantly.",
-            "When it arrives, review it for background/employment data and any "
-            "recipients listed.",
-            "Optional but recommended: place a <b>LexisNexis security freeze</b> "
-            "while you're there.",
+            f"<b>Request:</b> {_a('https://consumer.risk.lexisnexis.com/request', 'open the request form')} "
+            "and ask for your <b>Consumer Disclosure Report</b>. One is free per "
+            "12 months. Phone: 1-888-497-0011.",
+            "Verify your identity (SSN or driver's license). The report "
+            "arrives by mail, not instantly.",
+            "Review it for background/employment data and any recipients "
+            "listed. You can also request a <b>Description of Procedure</b> "
+            "letter on the same form.",
+            "<b>Dispute</b> any inaccurate item with the LexisNexis Consumer "
+            "Center (free). You can't have the whole file deleted, because it "
+            "is a consumer reporting agency.",
+            f"<b>Freeze:</b> {_a('https://consumer.risk.lexisnexis.com/freeze', 'apply, lift or remove a security freeze')} "
+            "at no charge.",
+            f"<b>Opt out / opt in</b> of marketing uses with the "
+            f"{_a('https://consumer.risk.lexisnexis.com/opt', 'opt-out form')} "
+            "(no SSN needed for this one).",
+        ],
+    ),
+    (
+        "Checkr",
+        [
+            f"<b>Request:</b> sign in at the {_a('https://candidate.checkr.com', 'Candidate Portal')} "
+            "and open your report. If a completed report isn't available "
+            "there, ask Checkr's Candidate Experience team for a copy.",
+            _RECIPIENTS,
+            "Check every record for accuracy and for any recipient you "
+            "don't recognize.",
+            "<b>Dispute:</b> use <b>File a dispute</b> in the portal and "
+            "upload supporting documents. Checkr reinvestigates, with up to "
+            "30 days to finish. Some reports (for example older or "
+            "in-progress ones) may not be disputable in the portal; if so, "
+            "dispute in writing using the address on your report.",
+            "Limit: one free file disclosure per 12 months.",
+        ],
+    ),
+    (
+        "Sterling",
+        [
+            f"<b>Request:</b> find Sterling's current consumer contact "
+            f"details on its {_a('https://www.consumerfinance.gov/consumer-tools/credit-reports-and-scores/consumer-reporting-companies/companies-list/sterling-talent-solutions/', 'CFPB listing')} "
+            "and request your <b>file disclosure</b>.",
+            "Verify your identity as prompted.",
+            _RECIPIENTS,
+            "<b>Dispute</b> in writing with details of each item and "
+            "supporting documents. Send it to the address on your own report "
+            "and keep a dated copy.",
+            "Limit: one free file disclosure per 12 months.",
+        ],
+    ),
+    (
+        "HireRight",
+        [
+            f"<b>Request:</b> go to HireRight's {_a('https://www.hireright.com/support/customer-support', 'candidate support page')} "
+            "and request a copy of your report. Truck drivers can also ask "
+            "for their <b>DAC report</b> (phone 866-521-6995).",
+            _RECIPIENTS,
+            "Check the report for accuracy and unfamiliar recipients.",
+            f"<b>Dispute:</b> use the free "
+            f"{_a('https://support.hireright.com/en-US/articles/dispute-the-accuracy-of-my-background-report-or-testing-results', 'dispute process')}.",
+            "Limit: one free file disclosure per 12 months.",
+        ],
+    ),
+    (
+        "First Advantage",
+        [
+            f"<b>Request:</b> use the {_a('https://fadv.com/candidates/free-report/', 'free report page')}, "
+            "call the Consumer Center at 800-845-6004, or email "
+            "consumer.documents@fadv.com.",
+            "Verify your identity as prompted.",
+            _RECIPIENTS,
+            "<b>Dispute:</b> ask for a reinvestigation by phone (800-845-6004) "
+            "or in writing, with supporting copies (never originals). It "
+            "is free; keep dated copies.",
+            "Limit: one free copy per year.",
+        ],
+    ),
+    (
+        "Accurate",
+        [
+            f"<b>Request:</b> open {_a('https://www.accurate.com/my-background-check/', 'My Background Check')} "
+            "and request a copy of your report.",
+            "Verify your identity as prompted.",
+            _RECIPIENTS,
+            f"<b>Dispute:</b> use the free "
+            f"{_a('https://www.accurate.com/file-a-compliance-dispute/', 'dispute form')}. "
+            "Their representatives can help you identify the item.",
+            "Limit: one free file disclosure per 12 months.",
         ],
     ),
     (
@@ -129,25 +257,23 @@ INSTRUCTIONS: list[tuple[str, list[str]]] = [
             "Scan the <b>Employment Screening</b> and specialty sections.",
             "Note any screener you recognize (e.g. one an employer used) that "
             "isn't already in your schedule.",
-            "Add it as a new source in <code>schedule.yaml</code> so it gets "
-            "tracked.",
+            "Add it as a new source in <code>schedule.yaml</code> with "
+            "<code>every_days: 365</code> and <code>min_days: 365</code> so it "
+            "gets tracked.",
         ],
     ),
-    # Fallback for the employment screeners (Checkr, Sterling, HireRight,
-    # First Advantage, Accurate). Matches any name — keep it LAST.
+    # Fallback for any other screener you add. Matches any name; keep LAST.
     (
         "",
         [
             "Open the vendor's consumer / candidate portal (link below).",
-            "Request a <b>copy of your file disclosure</b> (free under FCRA).",
-            "Also request the <b>list of recipients in the past 2 years</b> — "
-            "FCRA entitles you to know who pulled a report on you for "
-            "employment purposes.",
+            "Request a <b>copy of your file disclosure</b> (free once per 12 "
+            "months under the FCRA).",
+            _RECIPIENTS,
             "Verify your identity as prompted.",
-            "When the file arrives, check it for accuracy and for any recipient "
+            "When the file arrives, check it for accuracy and any recipient "
             "you don't recognize.",
-            "If anything is wrong, use their <b>dispute</b> process to correct "
-            "it.",
+            _DISPUTE_GENERIC,
         ],
     ),
 ]
@@ -216,6 +342,10 @@ def load_sources(path: Path = SCHEDULE) -> list[dict]:
             s["every_days"] = int(s.get("every_days", 90))
         except ValueError:
             s["every_days"] = 90
+        try:
+            s["min_days"] = max(0, int(s.get("min_days", 0)))
+        except ValueError:
+            s["min_days"] = 0
         s.setdefault("url", "")
         s.setdefault("notes", "")
         out.append(s)
@@ -475,6 +605,92 @@ def _esc(text: str) -> str:
     return _html.escape(str(text), quote=True)
 
 
+# --------------------------------------------------------------------------
+# App icon / logo. Single SVG source in recordward/assets (PNG/ICO are built
+# from it by scripts/make-icons.sh). Helpers return inline/data-URI forms so
+# the logo works in the live server, the static dashboard (file://), and the
+# launcher without extra requests or a looser Content-Security-Policy.
+# --------------------------------------------------------------------------
+ASSETS_DIR = Path(__file__).resolve().parent / "assets"
+
+
+def asset_path(name: str) -> Path:
+    """Absolute path to a packaged asset (e.g. 'icon-256.png')."""
+    return ASSETS_DIR / name
+
+
+def logo_svg(size: int = 32, small: bool = False) -> str:
+    """Inline <svg> for the brand mark, sized in px. Empty string if missing."""
+    import re
+
+    try:
+        src = asset_path("icon-small.svg" if small else "icon.svg").read_text(
+            encoding="utf-8"
+        )
+    except OSError:
+        return ""
+    src = re.sub(r"<\?xml[^>]*\?>", "", src)
+    src = re.sub(r"<title>.*?</title>", "", src, flags=re.S)
+    return src.replace(
+        "<svg ",
+        f'<svg class="logo" width="{int(size)}" height="{int(size)}" '
+        'aria-hidden="true" focusable="false" ',
+        1,
+    ).strip()
+
+
+def favicon_href() -> str:
+    """data: URI of the small icon, for <link rel="icon">. '' if missing."""
+    import base64
+
+    try:
+        raw = asset_path("icon-small.svg").read_bytes()
+    except OSError:
+        return ""
+    return "data:image/svg+xml;base64," + base64.b64encode(raw).decode("ascii")
+
+
+# --------------------------------------------------------------------------
+# In-page window controls (minimize / maximize-restore / fullscreen).
+# Only shown inside the native pywebview window; hidden in a normal browser,
+# which has its own. Plain strings (not f-strings) so they can be dropped
+# into either page template. Works on every OS pywebview supports, including
+# window managers that draw no title-bar buttons.
+# --------------------------------------------------------------------------
+WINCTL_CSS = """
+  [hidden] { display: none !important; }
+  .winctl { display: flex; justify-content: flex-end; gap: 6px; margin: 0 0 8px; }
+  .winctl button { width: 30px; height: 26px; padding: 0; display: grid;
+    place-items: center; background: var(--panel2); color: var(--text);
+    border: 1px solid var(--line); border-radius: 6px; cursor: pointer; }
+  .winctl button:hover { border-color: var(--accent); }
+  .winctl svg { width: 14px; height: 14px; fill: none; stroke: currentColor;
+    stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+"""
+WINCTL_HTML = """<div class="winctl" id="winctl" hidden>
+    <button type="button" data-win="minimize" title="Minimize" aria-label="Minimize"><svg viewBox="0 0 16 16"><path d="M3 12h10"/></svg></button>
+    <button type="button" data-win="maximize" title="Maximize / Restore" aria-label="Maximize or restore"><svg viewBox="0 0 16 16"><rect x="3" y="3" width="10" height="10" rx="1"/></svg></button>
+    <button type="button" data-win="fullscreen" title="Full screen (F11)" aria-label="Toggle full screen"><svg viewBox="0 0 16 16"><path d="M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4"/></svg></button>
+  </div>"""
+WINCTL_JS = """
+  (function () {
+    const bar = document.getElementById('winctl');
+    if (!bar) return;
+    const bridge = () => window.pywebview && window.pywebview.api
+      && window.pywebview.api.window_control;
+    const show = () => { if (bridge()) bar.hidden = false; };
+    const call = (a) => { if (bridge()) window.pywebview.api.window_control(a); };
+    bar.querySelectorAll('button').forEach(b =>
+      b.addEventListener('click', () => call(b.dataset.win)));
+    document.addEventListener('keydown', e => {
+      if (e.key === 'F11' && bridge()) { e.preventDefault(); call('fullscreen'); }
+    });
+    window.addEventListener('pywebviewready', show);
+    show();
+  })();
+"""
+
+
 def _card_html(
     status: dict, interactive: bool = False, snooze_days: int = 30
 ) -> str:
@@ -522,16 +738,30 @@ def _card_html(
             f'"{_esc(name)}"</code>'
         )
 
+    every = src["every_days"]
+    min_days = src.get("min_days", 0)
+    limit_html = ""
+    if min_days:
+        limit_html = f"<span>free limit: once per {min_days}d</span>"
+    warn_html = ""
+    if min_days and every < min_days:
+        warn_html = (
+            f'    <p class="limit-warn">Your reminder ({every}d) is shorter than '
+            f"this provider's free limit ({min_days}d). An earlier request may "
+            f"be refused or charged.</p>\n"
+        )
+
     return f"""  <section class="{card_cls}" data-due="{str(due).lower()}" data-name="{_esc(name)}">
     <div class="card-head">
       <h2>{_esc(name)}</h2>
       <span class="{badge_cls}">{_esc(badge)}</span>
     </div>
     <div class="meta">
-      <span>every {src['every_days']}d</span>
+      <span>every {every}d</span>
+      {limit_html}
       <span>last requested: {_esc(last)}</span>
     </div>
-    <p class="note">{_esc(src.get('notes', ''))}</p>
+{warn_html}    <p class="note">{_esc(src.get('notes', ''))}</p>
     <details{' open' if due else ''}>
       <summary>What to do here</summary>
       <ol>
@@ -725,6 +955,7 @@ def render_page(
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="{favicon_href()}">
 <title>Records Dashboard — recordward</title>
 <style>
   :root {{
@@ -733,8 +964,10 @@ def render_page(
     --due: #ff6b6b; --ok: #4ade80; --accent: #5aa9ff;
   }}
   * {{ box-sizing: border-box; }}
+  html {{ -webkit-text-size-adjust: 100%; }}
   body {{
     margin: 0; background: var(--bg); color: var(--text);
+    overflow-wrap: anywhere; min-width: 0;
     font: 15px/1.5 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
   }}
   header {{
@@ -746,7 +979,9 @@ def render_page(
     h1 {{ font-size: 18px; }}
     .controls button {{ flex: 1; }}  /* full-width, even buttons on phones */
   }}
-  h1 {{ margin: 0 0 4px; font-size: 20px; }}
+  h1 {{ margin: 0; font-size: 20px; }}
+  .brand {{ display: flex; align-items: center; gap: 10px; margin: 0 0 4px; }}
+  .brand .logo {{ flex: none; }}
   .sub {{ color: var(--muted); font-size: 13px; }}
   .summary {{
     margin-top: 10px; font-weight: 600;
@@ -772,14 +1007,18 @@ def render_page(
   .card {{
     background: var(--panel); border: 1px solid var(--line);
     border-radius: 12px; padding: 16px; display: flex; flex-direction: column;
+    min-width: 0; max-width: 100%;
   }}
   .card.due {{ border-color: color-mix(in srgb, var(--due) 55%, var(--line)); }}
   .card-head {{ display: flex; justify-content: space-between; gap: 8px;
-    align-items: flex-start; }}
-  .card-head h2 {{ margin: 0; font-size: 15px; }}
+    align-items: flex-start; flex-wrap: wrap; }}
+  /* Wrap at spaces first: the badge drops to its own line before the
+     title is forced to break inside a word. */
+  .card-head h2 {{ margin: 0; font-size: 15px; flex: 1 1 11em; min-width: 0;
+    overflow-wrap: break-word; }}
   .badge {{
     font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 999px;
-    white-space: nowrap; letter-spacing: .02em;
+    letter-spacing: .02em; max-width: 100%; text-align: center;
   }}
   .badge.due {{ background: color-mix(in srgb, var(--due) 22%, transparent);
     color: var(--due); }}
@@ -787,14 +1026,18 @@ def render_page(
     color: var(--ok); }}
   .meta {{ display: flex; gap: 14px; flex-wrap: wrap; color: var(--muted);
     font-size: 12px; margin: 10px 0 6px; }}
+  .limit-warn {{ color: var(--due); font-size: 12px; margin: 0 0 8px; }}
   .note {{ color: var(--muted); font-size: 13px; margin: 2px 0 10px; }}
   details {{ background: var(--panel2); border: 1px solid var(--line);
-    border-radius: 8px; padding: 6px 12px; margin-bottom: 12px; }}
+    border-radius: 8px; padding: 6px 12px; margin-bottom: 12px;
+    min-width: 0; }}
   summary {{ cursor: pointer; font-weight: 600; font-size: 13px; padding: 4px 0; }}
   details ol {{ margin: 8px 0 4px; padding-left: 20px; }}
+  details a {{ color: var(--accent); }}
+  details a:visited {{ color: color-mix(in srgb, var(--accent) 70%, var(--text)); }}
   details li {{ margin: 6px 0; font-size: 13px; color: var(--text); }}
   code {{ font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-    font-size: 12px; }}
+    font-size: 12px; overflow-wrap: anywhere; word-break: break-word; }}
   .actions {{ margin-top: auto; display: flex; flex-direction: column; gap: 8px; }}
   .btn {{
     display: inline-block; text-align: center; text-decoration: none;
@@ -803,14 +1046,14 @@ def render_page(
   }}
   .btn:hover {{ filter: brightness(1.08); }}
   button.btn {{ border: none; cursor: pointer; font: inherit; }}
-  .btn-row {{ display: flex; gap: 8px; }}
-  .btn-row .btn {{ flex: 1; }}
+  .btn-row {{ display: flex; gap: 8px; flex-wrap: wrap; }}
+  .btn-row .btn {{ flex: 1 1 110px; min-width: 0; }}
   .btn-ghost {{ background: var(--panel2); color: var(--text);
     border: 1px solid var(--line) !important; }}
   .btn-ghost:hover {{ border-color: var(--accent) !important; }}
   .done-hint {{ color: var(--muted); background: var(--bg);
     border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px;
-    user-select: all; }}
+    user-select: all; display: block; white-space: normal; }}
   footer {{ color: var(--muted); font-size: 12px; text-align: center;
     padding: 0 24px 40px; }}
   footer a {{ color: var(--accent); }}
@@ -818,22 +1061,27 @@ def render_page(
     color: var(--accent); border: 1px solid var(--accent); border-radius: 8px;
     padding: 8px 12px; margin-top: 12px; font-size: 12px; font-weight: 600; }}
   .panel {{ margin-top: 14px; padding: 14px; background: var(--panel);
-    border: 1px solid var(--line); border-radius: 10px; max-width: 520px; }}
+    border: 1px solid var(--line); border-radius: 10px; max-width: min(520px, 100%); }}
   .panel h3 {{ margin: 6px 0 8px; font-size: 14px; }}
   .panel label {{ display: block; margin: 8px 0; font-size: 13px;
     color: var(--muted); }}
   .panel label.row {{ display: flex; align-items: center; gap: 8px; }}
+  .panel .btn {{ max-width: 100%; }}
   .panel input[type=number] {{ width: 90px; margin-left: 8px; background: var(--bg);
     color: var(--text); border: 1px solid var(--line); border-radius: 6px;
     padding: 4px 6px; }}
   .panel .warn {{ color: var(--due); font-size: 12px; margin: 4px 0; }}
   .reset-row {{ display: flex; gap: 8px; flex-wrap: wrap; }}
+  .reset-row .btn {{ flex: 1 1 130px; min-width: 0; }}
+  /* Sticky header must not eat the viewport when the window is short. */
+  @media (max-height: 520px) {{ header {{ position: static; }} }}
   .btn-danger {{ background: var(--due) !important; color: #1a0606 !important; }}
-</style>
+{WINCTL_CSS}</style>
 </head>
 <body>
 <header>
-  <h1>Records Dashboard</h1>
+  {WINCTL_HTML}
+  <div class="brand">{logo_svg(36)}<h1>Records Dashboard</h1></div>
   <div class="sub">Request your own background-check / consumer-report records (US · FCRA)</div>
   <div class="summary">{_esc(summary)}</div>
   <div class="controls">
@@ -868,6 +1116,7 @@ def render_page(
   }}
   buttons.forEach(b => b.addEventListener('click', () => apply(b.dataset.filter)));
   apply('due');
+{WINCTL_JS}
 {action_js}
 </script>
 </body>
@@ -933,6 +1182,14 @@ def reset_all() -> None:
     for f in (LOG, HISTORY, DASHBOARD, SCHEDULE, _settings.paths.settings_file()):
         if f.exists():
             f.unlink()
+    # App error log (+ rotated backup). On Windows it is locked while the
+    # app is running; skip it then rather than failing the reset.
+    applog_file = paths.app_log_file()
+    for f in (applog_file, applog_file.with_name(applog_file.name + ".1")):
+        try:
+            f.unlink()
+        except OSError:
+            pass
 
 
 def cmd_reset(what: str, assume_yes: bool) -> None:
@@ -988,6 +1245,7 @@ def cmd_where() -> None:
     print(f"requests:    {LOG}")
     print(f"history:     {HISTORY}")
     print(f"dashboard:   {DASHBOARD}")
+    print(f"app log:     {paths.app_log_file()}")
 
 
 def _desktop_notify(title: str, body: str) -> None:
@@ -1183,6 +1441,9 @@ def main(argv: list[str]) -> None:
         cmd_notify()
         return
     if command == "app":
+        from . import applog
+
+        applog.enable()
         from . import launcher as _launcher
 
         _launcher.run()

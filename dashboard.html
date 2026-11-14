@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIiB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsPSJSZWNvcmRXYXJkIj4KICA8dGl0bGU+UmVjb3JkV2FyZDwvdGl0bGU+CiAgPGRlZnM+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9InJ3LXNoaWVsZC1zIiB4MT0iMCIgeTE9IjAiIHgyPSIwIiB5Mj0iMSI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iIzdjYmNmZiIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiMzZjhmZTYiLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgPC9kZWZzPgogIDwhLS0gc2ltcGxpZmllZCBmb3IgMTYtMzJweDogbm8gdGlsZSwgYmlnZ2VyIHNoaWVsZCwgYm9sZCBjaGVjaywgbm8gcGFnZSAtLT4KICA8cGF0aCBkPSJNMjU2IDI0IEw0NzYgMTA0IFYyNjggQzQ3NiAzOTggMzg4IDQ3MCAyNTYgNTA4IEMxMjQgNDcwIDM2IDM5OCAzNiAyNjggVjEwNCBaIgogICAgICAgIGZpbGw9InVybCgjcnctc2hpZWxkLXMpIi8+CiAgPHBhdGggZD0iTTE0OCAyNjIgTDIyNiAzNDAgTDM3MCAxODAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzBmMTExNSIgc3Ryb2tlLXdpZHRoPSI1NiIKICAgICAgICBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4KPC9zdmc+Cg==">
 <title>Records Dashboard — recordward</title>
 <style>
   :root {
@@ -11,8 +12,10 @@
     --due: #ff6b6b; --ok: #4ade80; --accent: #5aa9ff;
   }
   * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
   body {
     margin: 0; background: var(--bg); color: var(--text);
+    overflow-wrap: anywhere; min-width: 0;
     font: 15px/1.5 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
   }
   header {
@@ -24,7 +27,9 @@
     h1 { font-size: 18px; }
     .controls button { flex: 1; }  /* full-width, even buttons on phones */
   }
-  h1 { margin: 0 0 4px; font-size: 20px; }
+  h1 { margin: 0; font-size: 20px; }
+  .brand { display: flex; align-items: center; gap: 10px; margin: 0 0 4px; }
+  .brand .logo { flex: none; }
   .sub { color: var(--muted); font-size: 13px; }
   .summary {
     margin-top: 10px; font-weight: 600;
@@ -50,14 +55,18 @@
   .card {
     background: var(--panel); border: 1px solid var(--line);
     border-radius: 12px; padding: 16px; display: flex; flex-direction: column;
+    min-width: 0; max-width: 100%;
   }
   .card.due { border-color: color-mix(in srgb, var(--due) 55%, var(--line)); }
   .card-head { display: flex; justify-content: space-between; gap: 8px;
-    align-items: flex-start; }
-  .card-head h2 { margin: 0; font-size: 15px; }
+    align-items: flex-start; flex-wrap: wrap; }
+  /* Wrap at spaces first: the badge drops to its own line before the
+     title is forced to break inside a word. */
+  .card-head h2 { margin: 0; font-size: 15px; flex: 1 1 11em; min-width: 0;
+    overflow-wrap: break-word; }
   .badge {
     font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 999px;
-    white-space: nowrap; letter-spacing: .02em;
+    letter-spacing: .02em; max-width: 100%; text-align: center;
   }
   .badge.due { background: color-mix(in srgb, var(--due) 22%, transparent);
     color: var(--due); }
@@ -65,14 +74,18 @@
     color: var(--ok); }
   .meta { display: flex; gap: 14px; flex-wrap: wrap; color: var(--muted);
     font-size: 12px; margin: 10px 0 6px; }
+  .limit-warn { color: var(--due); font-size: 12px; margin: 0 0 8px; }
   .note { color: var(--muted); font-size: 13px; margin: 2px 0 10px; }
   details { background: var(--panel2); border: 1px solid var(--line);
-    border-radius: 8px; padding: 6px 12px; margin-bottom: 12px; }
+    border-radius: 8px; padding: 6px 12px; margin-bottom: 12px;
+    min-width: 0; }
   summary { cursor: pointer; font-weight: 600; font-size: 13px; padding: 4px 0; }
   details ol { margin: 8px 0 4px; padding-left: 20px; }
+  details a { color: var(--accent); }
+  details a:visited { color: color-mix(in srgb, var(--accent) 70%, var(--text)); }
   details li { margin: 6px 0; font-size: 13px; color: var(--text); }
   code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-    font-size: 12px; }
+    font-size: 12px; overflow-wrap: anywhere; word-break: break-word; }
   .actions { margin-top: auto; display: flex; flex-direction: column; gap: 8px; }
   .btn {
     display: inline-block; text-align: center; text-decoration: none;
@@ -81,14 +94,14 @@
   }
   .btn:hover { filter: brightness(1.08); }
   button.btn { border: none; cursor: pointer; font: inherit; }
-  .btn-row { display: flex; gap: 8px; }
-  .btn-row .btn { flex: 1; }
+  .btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .btn-row .btn { flex: 1 1 110px; min-width: 0; }
   .btn-ghost { background: var(--panel2); color: var(--text);
     border: 1px solid var(--line) !important; }
   .btn-ghost:hover { border-color: var(--accent) !important; }
   .done-hint { color: var(--muted); background: var(--bg);
     border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px;
-    user-select: all; }
+    user-select: all; display: block; white-space: normal; }
   footer { color: var(--muted); font-size: 12px; text-align: center;
     padding: 0 24px 40px; }
   footer a { color: var(--accent); }
@@ -96,22 +109,59 @@
     color: var(--accent); border: 1px solid var(--accent); border-radius: 8px;
     padding: 8px 12px; margin-top: 12px; font-size: 12px; font-weight: 600; }
   .panel { margin-top: 14px; padding: 14px; background: var(--panel);
-    border: 1px solid var(--line); border-radius: 10px; max-width: 520px; }
+    border: 1px solid var(--line); border-radius: 10px; max-width: min(520px, 100%); }
   .panel h3 { margin: 6px 0 8px; font-size: 14px; }
   .panel label { display: block; margin: 8px 0; font-size: 13px;
     color: var(--muted); }
   .panel label.row { display: flex; align-items: center; gap: 8px; }
+  .panel .btn { max-width: 100%; }
   .panel input[type=number] { width: 90px; margin-left: 8px; background: var(--bg);
     color: var(--text); border: 1px solid var(--line); border-radius: 6px;
     padding: 4px 6px; }
   .panel .warn { color: var(--due); font-size: 12px; margin: 4px 0; }
   .reset-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .reset-row .btn { flex: 1 1 130px; min-width: 0; }
+  /* Sticky header must not eat the viewport when the window is short. */
+  @media (max-height: 520px) { header { position: static; } }
   .btn-danger { background: var(--due) !important; color: #1a0606 !important; }
+
+  [hidden] { display: none !important; }
+  .winctl { display: flex; justify-content: flex-end; gap: 6px; margin: 0 0 8px; }
+  .winctl button { width: 30px; height: 26px; padding: 0; display: grid;
+    place-items: center; background: var(--panel2); color: var(--text);
+    border: 1px solid var(--line); border-radius: 6px; cursor: pointer; }
+  .winctl button:hover { border-color: var(--accent); }
+  .winctl svg { width: 14px; height: 14px; fill: none; stroke: currentColor;
+    stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
 </style>
 </head>
 <body>
 <header>
-  <h1>Records Dashboard</h1>
+  <div class="winctl" id="winctl" hidden>
+    <button type="button" data-win="minimize" title="Minimize" aria-label="Minimize"><svg viewBox="0 0 16 16"><path d="M3 12h10"/></svg></button>
+    <button type="button" data-win="maximize" title="Maximize / Restore" aria-label="Maximize or restore"><svg viewBox="0 0 16 16"><rect x="3" y="3" width="10" height="10" rx="1"/></svg></button>
+    <button type="button" data-win="fullscreen" title="Full screen (F11)" aria-label="Toggle full screen"><svg viewBox="0 0 16 16"><path d="M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4"/></svg></button>
+  </div>
+  <div class="brand"><svg class="logo" width="36" height="36" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="RecordWard">
+  
+  <defs>
+    <linearGradient id="rw-shield" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#7cbcff"/>
+      <stop offset="1" stop-color="#3f8fe6"/>
+    </linearGradient>
+  </defs>
+  <!-- app tile -->
+  <rect x="16" y="16" width="480" height="480" rx="112" fill="#171a21" stroke="#2a2f3a" stroke-width="8"/>
+  <!-- shield: guard -->
+  <path d="M256 78 L404 132 V250 C404 342 343 402 256 440 C169 402 108 342 108 250 V132 Z"
+        fill="url(#rw-shield)"/>
+  <!-- file page: your record -->
+  <path d="M192 168 H290 L330 208 V332 H192 Z" fill="#0f1115"/>
+  <path d="M290 168 V208 H330 Z" fill="#2a2f3a"/>
+  <!-- check: verified -->
+  <path d="M218 262 L248 292 L304 228" fill="none" stroke="#4ade80" stroke-width="24"
+        stroke-linecap="round" stroke-linejoin="round"/>
+</svg><h1>Records Dashboard</h1></div>
   <div class="sub">Request your own background-check / consumer-report records (US · FCRA)</div>
   <div class="summary">4 of 10 source(s) due</div>
   <div class="controls">
@@ -130,18 +180,21 @@
     </div>
     <div class="meta">
       <span>every 30d</span>
+      <span>free limit: once per 7d</span>
       <span>last requested: never</span>
     </div>
-    <p class="note">Pull full report; review the Inquiries section.</p>
+    <p class="note">Free weekly report. Review Inquiries; freeze, fraud alert and disputes are free.</p>
     <details open>
       <summary>What to do here</summary>
       <ol>
-      <li>Open the site and choose to request your report (you can do all three bureaus, but this card is for one — pull the matching one).</li>
-      <li>Verify your identity (SSN, DOB, address; they may ask security questions).</li>
-      <li>Open the report and go straight to the <b>Inquiries</b> section.</li>
-      <li>Look under <b>soft / promotional / employment inquiries</b> for any name you don't recognize or any employer/screener.</li>
-      <li>Save or screenshot the inquiries list so you can compare next time.</li>
-      <li>Reports are free weekly, so pulling often is fine and never hurts your score.</li>
+      <li><b>Request:</b> open <a href="https://www.annualcreditreport.com" target="_blank" rel="noopener noreferrer">AnnualCreditReport.com</a> and pull the <b>Equifax</b> report. This card is for one bureau.</li>
+      <li>Verify your identity (SSN, DOB, address; you may get security questions).</li>
+      <li>Go straight to the <b>Inquiries</b> section and look for any name or employer/screener you don't recognize.</li>
+      <li>Save or screenshot the inquiries list to compare next time. Reports are free weekly, and checking never hurts your score.</li>
+      <li><b>Dispute</b> anything wrong, incomplete or unrecognized. Disputes are free, the company must investigate (generally within 30 days), and you should keep dated copies of everything you send. Use the dispute link on Equifax's own site or report.</li>
+      <li><b>Freeze:</b> a security freeze is free by federal law and lifting it is free too. <a href="https://www.equifax.com/personal/credit-report-services/credit-freeze/" target="_blank" rel="noopener noreferrer">Place or lift it at Equifax</a>.</li>
+      <li><b>Fraud alert:</b> free. A 1-year alert needs only a request; a 7-year extended alert needs an identity theft report from <a href="https://www.identitytheft.gov" target="_blank" rel="noopener noreferrer">IdentityTheft.gov</a>. Placing one at a bureau passes it to the other two.</li>
+      <li><b>Opt out</b> of prescreened credit/insurance offers at <a href="https://www.optoutprescreen.com" target="_blank" rel="noopener noreferrer">OptOutPrescreen.com</a>.</li>
       </ol>
     </details>
     <div class="actions">
@@ -155,18 +208,20 @@
       <span class="badge due">DUE · never requested</span>
     </div>
     <div class="meta">
-      <span>every 90d</span>
+      <span>every 365d</span>
+      <span>free limit: once per 365d</span>
       <span>last requested: never</span>
     </div>
-    <p class="note">Free FCRA disclosure. Consider also placing a security freeze.</p>
+    <p class="note">One free disclosure per 12 months. Freeze is free; opt-out form available.</p>
     <details open>
       <summary>What to do here</summary>
       <ol>
-      <li>Open the consumer disclosure request page.</li>
-      <li>Submit a <b>Full File Disclosure</b> request (free under FCRA).</li>
-      <li>Verify your identity; the report usually arrives by mail/secure delivery, not instantly.</li>
-      <li>When it arrives, review it for background/employment data and any recipients listed.</li>
-      <li>Optional but recommended: place a <b>LexisNexis security freeze</b> while you're there.</li>
+      <li><b>Request:</b> <a href="https://consumer.risk.lexisnexis.com/request" target="_blank" rel="noopener noreferrer">open the request form</a> and ask for your <b>Consumer Disclosure Report</b>. One is free per 12 months. Phone: 1-888-497-0011.</li>
+      <li>Verify your identity (SSN or driver's license). The report arrives by mail, not instantly.</li>
+      <li>Review it for background/employment data and any recipients listed. You can also request a <b>Description of Procedure</b> letter on the same form.</li>
+      <li><b>Dispute</b> any inaccurate item with the LexisNexis Consumer Center (free). You can't have the whole file deleted, because it is a consumer reporting agency.</li>
+      <li><b>Freeze:</b> <a href="https://consumer.risk.lexisnexis.com/freeze" target="_blank" rel="noopener noreferrer">apply, lift or remove a security freeze</a> at no charge.</li>
+      <li><b>Opt out / opt in</b> of marketing uses with the <a href="https://consumer.risk.lexisnexis.com/opt" target="_blank" rel="noopener noreferrer">opt-out form</a> (no SSN needed for this one).</li>
       </ol>
     </details>
     <div class="actions">
@@ -180,19 +235,19 @@
       <span class="badge due">DUE · never requested</span>
     </div>
     <div class="meta">
-      <span>every 180d</span>
+      <span>every 365d</span>
+      <span>free limit: once per 365d</span>
       <span>last requested: never</span>
     </div>
-    <p class="note">Request file disclosure + recipient list.</p>
+    <p class="note">One free file disclosure per 12 months (includes DAC reports). Disputes are free.</p>
     <details open>
       <summary>What to do here</summary>
       <ol>
-      <li>Open the vendor's consumer / candidate portal (link below).</li>
-      <li>Request a <b>copy of your file disclosure</b> (free under FCRA).</li>
-      <li>Also request the <b>list of recipients in the past 2 years</b> — FCRA entitles you to know who pulled a report on you for employment purposes.</li>
-      <li>Verify your identity as prompted.</li>
-      <li>When the file arrives, check it for accuracy and for any recipient you don't recognize.</li>
-      <li>If anything is wrong, use their <b>dispute</b> process to correct it.</li>
+      <li><b>Request:</b> go to HireRight's <a href="https://www.hireright.com/support/customer-support" target="_blank" rel="noopener noreferrer">candidate support page</a> and request a copy of your report. Truck drivers can also ask for their <b>DAC report</b> (phone 866-521-6995).</li>
+      <li>Ask for the <b>list of recipients</b>: the FCRA entitles you to know who received a report on you in the past <b>2 years for employment</b> purposes and the past <b>1 year for any other purpose</b>.</li>
+      <li>Check the report for accuracy and unfamiliar recipients.</li>
+      <li><b>Dispute:</b> use the free <a href="https://support.hireright.com/en-US/articles/dispute-the-accuracy-of-my-background-report-or-testing-results" target="_blank" rel="noopener noreferrer">dispute process</a>.</li>
+      <li>Limit: one free file disclosure per 12 months.</li>
       </ol>
     </details>
     <div class="actions">
@@ -207,6 +262,7 @@
     </div>
     <div class="meta">
       <span>every 365d</span>
+      
       <span>last requested: never</span>
     </div>
     <p class="note">Scan for any new specialty/employment screener to add above.</p>
@@ -216,7 +272,7 @@
       <li>Open the CFPB list of consumer reporting companies.</li>
       <li>Scan the <b>Employment Screening</b> and specialty sections.</li>
       <li>Note any screener you recognize (e.g. one an employer used) that isn't already in your schedule.</li>
-      <li>Add it as a new source in <code>schedule.yaml</code> so it gets tracked.</li>
+      <li>Add it as a new source in <code>schedule.yaml</code> with <code>every_days: 365</code> and <code>min_days: 365</code> so it gets tracked.</li>
       </ol>
     </details>
     <div class="actions">
@@ -227,22 +283,25 @@
   <section class="card" data-due="false" data-name="Experian (AnnualCreditReport)">
     <div class="card-head">
       <h2>Experian (AnnualCreditReport)</h2>
-      <span class="badge ok">OK · next 2026-11-24</span>
+      <span class="badge ok">OK · next 2026-12-04</span>
     </div>
     <div class="meta">
       <span>every 30d</span>
-      <span>last requested: 2026-10-25</span>
+      <span>free limit: once per 7d</span>
+      <span>last requested: 2026-11-04</span>
     </div>
-    <p class="note">Pull full report; review the Inquiries section.</p>
+    <p class="note">Free weekly report. Review Inquiries; freeze, fraud alert and disputes are free.</p>
     <details>
       <summary>What to do here</summary>
       <ol>
-      <li>Open the site and choose to request your report (you can do all three bureaus, but this card is for one — pull the matching one).</li>
-      <li>Verify your identity (SSN, DOB, address; they may ask security questions).</li>
-      <li>Open the report and go straight to the <b>Inquiries</b> section.</li>
-      <li>Look under <b>soft / promotional / employment inquiries</b> for any name you don't recognize or any employer/screener.</li>
-      <li>Save or screenshot the inquiries list so you can compare next time.</li>
-      <li>Reports are free weekly, so pulling often is fine and never hurts your score.</li>
+      <li><b>Request:</b> open <a href="https://www.annualcreditreport.com" target="_blank" rel="noopener noreferrer">AnnualCreditReport.com</a> and pull the <b>Experian</b> report. This card is for one bureau.</li>
+      <li>Verify your identity (SSN, DOB, address; you may get security questions).</li>
+      <li>Go straight to the <b>Inquiries</b> section and look for any name or employer/screener you don't recognize.</li>
+      <li>Save or screenshot the inquiries list to compare next time. Reports are free weekly, and checking never hurts your score.</li>
+      <li><b>Dispute</b> anything wrong, incomplete or unrecognized. Disputes are free, the company must investigate (generally within 30 days), and you should keep dated copies of everything you send. Use the dispute link on Experian's own site or report.</li>
+      <li><b>Freeze:</b> a security freeze is free by federal law and lifting it is free too. <a href="https://www.experian.com/freeze/center.html" target="_blank" rel="noopener noreferrer">Place or lift it at Experian</a>.</li>
+      <li><b>Fraud alert:</b> free. A 1-year alert needs only a request; a 7-year extended alert needs an identity theft report from <a href="https://www.identitytheft.gov" target="_blank" rel="noopener noreferrer">IdentityTheft.gov</a>. Placing one at a bureau passes it to the other two.</li>
+      <li><b>Opt out</b> of prescreened credit/insurance offers at <a href="https://www.optoutprescreen.com" target="_blank" rel="noopener noreferrer">OptOutPrescreen.com</a>.</li>
       </ol>
     </details>
     <div class="actions">
@@ -253,22 +312,25 @@
   <section class="card" data-due="false" data-name="TransUnion (AnnualCreditReport)">
     <div class="card-head">
       <h2>TransUnion (AnnualCreditReport)</h2>
-      <span class="badge ok">OK · next 2026-11-24</span>
+      <span class="badge ok">OK · next 2026-12-04</span>
     </div>
     <div class="meta">
       <span>every 30d</span>
-      <span>last requested: 2026-10-25</span>
+      <span>free limit: once per 7d</span>
+      <span>last requested: 2026-11-04</span>
     </div>
-    <p class="note">Pull full report; review the Inquiries section.</p>
+    <p class="note">Free weekly report. Review Inquiries; freeze, fraud alert and disputes are free.</p>
     <details>
       <summary>What to do here</summary>
       <ol>
-      <li>Open the site and choose to request your report (you can do all three bureaus, but this card is for one — pull the matching one).</li>
-      <li>Verify your identity (SSN, DOB, address; they may ask security questions).</li>
-      <li>Open the report and go straight to the <b>Inquiries</b> section.</li>
-      <li>Look under <b>soft / promotional / employment inquiries</b> for any name you don't recognize or any employer/screener.</li>
-      <li>Save or screenshot the inquiries list so you can compare next time.</li>
-      <li>Reports are free weekly, so pulling often is fine and never hurts your score.</li>
+      <li><b>Request:</b> open <a href="https://www.annualcreditreport.com" target="_blank" rel="noopener noreferrer">AnnualCreditReport.com</a> and pull the <b>TransUnion</b> report. This card is for one bureau.</li>
+      <li>Verify your identity (SSN, DOB, address; you may get security questions).</li>
+      <li>Go straight to the <b>Inquiries</b> section and look for any name or employer/screener you don't recognize.</li>
+      <li>Save or screenshot the inquiries list to compare next time. Reports are free weekly, and checking never hurts your score.</li>
+      <li><b>Dispute</b> anything wrong, incomplete or unrecognized. Disputes are free, the company must investigate (generally within 30 days), and you should keep dated copies of everything you send. Use the dispute link on TransUnion's own site or report.</li>
+      <li><b>Freeze:</b> a security freeze is free by federal law and lifting it is free too. <a href="https://www.transunion.com/credit-freeze" target="_blank" rel="noopener noreferrer">Place or lift it at TransUnion</a>.</li>
+      <li><b>Fraud alert:</b> free. A 1-year alert needs only a request; a 7-year extended alert needs an identity theft report from <a href="https://www.identitytheft.gov" target="_blank" rel="noopener noreferrer">IdentityTheft.gov</a>. Placing one at a bureau passes it to the other two.</li>
+      <li><b>Opt out</b> of prescreened credit/insurance offers at <a href="https://www.optoutprescreen.com" target="_blank" rel="noopener noreferrer">OptOutPrescreen.com</a>.</li>
       </ol>
     </details>
     <div class="actions">
@@ -279,22 +341,22 @@
   <section class="card" data-due="false" data-name="Checkr (file + 2yr recipients)">
     <div class="card-head">
       <h2>Checkr (file + 2yr recipients)</h2>
-      <span class="badge ok">OK · next 2027-03-04</span>
+      <span class="badge ok">OK · next 2027-07-16</span>
     </div>
     <div class="meta">
-      <span>every 180d</span>
-      <span>last requested: 2026-09-05</span>
+      <span>every 365d</span>
+      <span>free limit: once per 365d</span>
+      <span>last requested: 2026-07-16</span>
     </div>
-    <p class="note">Request file disclosure + recipient list.</p>
+    <p class="note">One free file disclosure per 12 months. Disputes are free (portal).</p>
     <details>
       <summary>What to do here</summary>
       <ol>
-      <li>Open the vendor's consumer / candidate portal (link below).</li>
-      <li>Request a <b>copy of your file disclosure</b> (free under FCRA).</li>
-      <li>Also request the <b>list of recipients in the past 2 years</b> — FCRA entitles you to know who pulled a report on you for employment purposes.</li>
-      <li>Verify your identity as prompted.</li>
-      <li>When the file arrives, check it for accuracy and for any recipient you don't recognize.</li>
-      <li>If anything is wrong, use their <b>dispute</b> process to correct it.</li>
+      <li><b>Request:</b> sign in at the <a href="https://candidate.checkr.com" target="_blank" rel="noopener noreferrer">Candidate Portal</a> and open your report. If a completed report isn't available there, ask Checkr's Candidate Experience team for a copy.</li>
+      <li>Ask for the <b>list of recipients</b>: the FCRA entitles you to know who received a report on you in the past <b>2 years for employment</b> purposes and the past <b>1 year for any other purpose</b>.</li>
+      <li>Check every record for accuracy and for any recipient you don't recognize.</li>
+      <li><b>Dispute:</b> use <b>File a dispute</b> in the portal and upload supporting documents. Checkr reinvestigates, with up to 30 days to finish. Some reports (for example older or in-progress ones) may not be disputable in the portal; if so, dispute in writing using the address on your report.</li>
+      <li>Limit: one free file disclosure per 12 months.</li>
       </ol>
     </details>
     <div class="actions">
@@ -305,84 +367,84 @@
   <section class="card" data-due="false" data-name="Sterling (file request)">
     <div class="card-head">
       <h2>Sterling (file request)</h2>
-      <span class="badge ok">OK · next 2027-03-04</span>
+      <span class="badge ok">OK · next 2027-07-16</span>
     </div>
     <div class="meta">
-      <span>every 180d</span>
-      <span>last requested: 2026-09-05</span>
+      <span>every 365d</span>
+      <span>free limit: once per 365d</span>
+      <span>last requested: 2026-07-16</span>
     </div>
-    <p class="note">Request file disclosure + recipient list.</p>
+    <p class="note">One free file disclosure per 12 months. Contact details are on the CFPB listing.</p>
     <details>
       <summary>What to do here</summary>
       <ol>
-      <li>Open the vendor's consumer / candidate portal (link below).</li>
-      <li>Request a <b>copy of your file disclosure</b> (free under FCRA).</li>
-      <li>Also request the <b>list of recipients in the past 2 years</b> — FCRA entitles you to know who pulled a report on you for employment purposes.</li>
+      <li><b>Request:</b> find Sterling's current consumer contact details on its <a href="https://www.consumerfinance.gov/consumer-tools/credit-reports-and-scores/consumer-reporting-companies/companies-list/sterling-talent-solutions/" target="_blank" rel="noopener noreferrer">CFPB listing</a> and request your <b>file disclosure</b>.</li>
       <li>Verify your identity as prompted.</li>
-      <li>When the file arrives, check it for accuracy and for any recipient you don't recognize.</li>
-      <li>If anything is wrong, use their <b>dispute</b> process to correct it.</li>
+      <li>Ask for the <b>list of recipients</b>: the FCRA entitles you to know who received a report on you in the past <b>2 years for employment</b> purposes and the past <b>1 year for any other purpose</b>.</li>
+      <li><b>Dispute</b> in writing with details of each item and supporting documents. Send it to the address on your own report and keep a dated copy.</li>
+      <li>Limit: one free file disclosure per 12 months.</li>
       </ol>
     </details>
     <div class="actions">
-      <a class="btn" href="https://www.sterlingcheck.com/contact/" target="_blank" rel="noopener noreferrer">Open site ↗</a>
+      <a class="btn" href="https://www.consumerfinance.gov/consumer-tools/credit-reports-and-scores/consumer-reporting-companies/companies-list/sterling-talent-solutions/" target="_blank" rel="noopener noreferrer">Open site ↗</a>
       <code class="done-hint">python3 recordward.py done "Sterling (file request)"</code>
     </div>
   </section>
   <section class="card" data-due="false" data-name="First Advantage (file request)">
     <div class="card-head">
       <h2>First Advantage (file request)</h2>
-      <span class="badge ok">OK · next 2027-03-04</span>
+      <span class="badge ok">OK · next 2027-07-16</span>
     </div>
     <div class="meta">
-      <span>every 180d</span>
-      <span>last requested: 2026-09-05</span>
+      <span>every 365d</span>
+      <span>free limit: once per 365d</span>
+      <span>last requested: 2026-07-16</span>
     </div>
-    <p class="note">Request file disclosure + recipient list.</p>
+    <p class="note">One free copy per year. Disputes: 800-845-6004.</p>
     <details>
       <summary>What to do here</summary>
       <ol>
-      <li>Open the vendor's consumer / candidate portal (link below).</li>
-      <li>Request a <b>copy of your file disclosure</b> (free under FCRA).</li>
-      <li>Also request the <b>list of recipients in the past 2 years</b> — FCRA entitles you to know who pulled a report on you for employment purposes.</li>
+      <li><b>Request:</b> use the <a href="https://fadv.com/candidates/free-report/" target="_blank" rel="noopener noreferrer">free report page</a>, call the Consumer Center at 800-845-6004, or email consumer.documents@fadv.com.</li>
       <li>Verify your identity as prompted.</li>
-      <li>When the file arrives, check it for accuracy and for any recipient you don't recognize.</li>
-      <li>If anything is wrong, use their <b>dispute</b> process to correct it.</li>
+      <li>Ask for the <b>list of recipients</b>: the FCRA entitles you to know who received a report on you in the past <b>2 years for employment</b> purposes and the past <b>1 year for any other purpose</b>.</li>
+      <li><b>Dispute:</b> ask for a reinvestigation by phone (800-845-6004) or in writing, with supporting copies (never originals). It is free; keep dated copies.</li>
+      <li>Limit: one free copy per year.</li>
       </ol>
     </details>
     <div class="actions">
-      <a class="btn" href="https://fadv.com/solutions/background-screening/consumer-center/" target="_blank" rel="noopener noreferrer">Open site ↗</a>
+      <a class="btn" href="https://fadv.com/candidates/free-report/" target="_blank" rel="noopener noreferrer">Open site ↗</a>
       <code class="done-hint">python3 recordward.py done "First Advantage (file request)"</code>
     </div>
   </section>
   <section class="card" data-due="false" data-name="Accurate Background (file request)">
     <div class="card-head">
       <h2>Accurate Background (file request)</h2>
-      <span class="badge ok">OK · next 2027-03-04</span>
+      <span class="badge ok">OK · next 2027-07-16</span>
     </div>
     <div class="meta">
-      <span>every 180d</span>
-      <span>last requested: 2026-09-05</span>
+      <span>every 365d</span>
+      <span>free limit: once per 365d</span>
+      <span>last requested: 2026-07-16</span>
     </div>
-    <p class="note">Request file disclosure + recipient list.</p>
+    <p class="note">One free file disclosure per 12 months. Disputes are free (online form).</p>
     <details>
       <summary>What to do here</summary>
       <ol>
-      <li>Open the vendor's consumer / candidate portal (link below).</li>
-      <li>Request a <b>copy of your file disclosure</b> (free under FCRA).</li>
-      <li>Also request the <b>list of recipients in the past 2 years</b> — FCRA entitles you to know who pulled a report on you for employment purposes.</li>
+      <li><b>Request:</b> open <a href="https://www.accurate.com/my-background-check/" target="_blank" rel="noopener noreferrer">My Background Check</a> and request a copy of your report.</li>
       <li>Verify your identity as prompted.</li>
-      <li>When the file arrives, check it for accuracy and for any recipient you don't recognize.</li>
-      <li>If anything is wrong, use their <b>dispute</b> process to correct it.</li>
+      <li>Ask for the <b>list of recipients</b>: the FCRA entitles you to know who received a report on you in the past <b>2 years for employment</b> purposes and the past <b>1 year for any other purpose</b>.</li>
+      <li><b>Dispute:</b> use the free <a href="https://www.accurate.com/file-a-compliance-dispute/" target="_blank" rel="noopener noreferrer">dispute form</a>. Their representatives can help you identify the item.</li>
+      <li>Limit: one free file disclosure per 12 months.</li>
       </ol>
     </details>
     <div class="actions">
-      <a class="btn" href="https://www.accurate.com/consumer/" target="_blank" rel="noopener noreferrer">Open site ↗</a>
+      <a class="btn" href="https://www.accurate.com/my-background-check/" target="_blank" rel="noopener noreferrer">Open site ↗</a>
       <code class="done-hint">python3 recordward.py done "Accurate Background (file request)"</code>
     </div>
   </section>
 </main>
 <footer>
-  Generated 2026-11-04 20:25 from sample data (<code>--demo</code>).<br>
+  Generated 2026-11-14 15:19 from sample data (<code>--demo</code>).<br>
   After you request a source, record it: <code>python3 recordward.py done "&lt;name&gt;"</code>, then regenerate.<br>This page reflects a snapshot — it does not update itself live.<br>
   RecordWard — free software under the
   <a href="https://github.com/Cyb3rF0xX/recordward" target="_blank" rel="noopener noreferrer">AGPLv3</a>
@@ -402,6 +464,23 @@
   }
   buttons.forEach(b => b.addEventListener('click', () => apply(b.dataset.filter)));
   apply('due');
+
+  (function () {
+    const bar = document.getElementById('winctl');
+    if (!bar) return;
+    const bridge = () => window.pywebview && window.pywebview.api
+      && window.pywebview.api.window_control;
+    const show = () => { if (bridge()) bar.hidden = false; };
+    const call = (a) => { if (bridge()) window.pywebview.api.window_control(a); };
+    bar.querySelectorAll('button').forEach(b =>
+      b.addEventListener('click', () => call(b.dataset.win)));
+    document.addEventListener('keydown', e => {
+      if (e.key === 'F11' && bridge()) { e.preventDefault(); call('fullscreen'); }
+    });
+    window.addEventListener('pywebviewready', show);
+    show();
+  })();
+
 
 </script>
 </body>

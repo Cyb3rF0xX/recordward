@@ -12,7 +12,7 @@ Known work items, roughly prioritized. Not yet implemented.
   narrow window up to full screen — verify in the pywebview window, the browser
   `serve` mode, and the static dashboard.
 
-- [ ] **App logo / icon.** The project has no logo or icon. Needs:
+- [x] **App logo / icon.** (done in 1.1.0) The project has no logo or icon. Needs:
   - an app icon for the desktop launcher (`recordward.desktop` currently uses
     the generic `system-software-update`/stock icon) and the pywebview window;
   - a favicon / header mark for the dashboard UI;
@@ -41,6 +41,15 @@ Known work items, roughly prioritized. Not yet implemented.
   in `settings.json`, and (c) a toggle in the Settings panel + the launcher.
   Respect `prefers-color-scheme` for the `system` option. Make sure the chosen
   theme applies to both the dashboard and the launcher window.
+
+## Distribution
+- [ ] **One-download installs for Windows, macOS and Linux** (non-technical
+  users). Spike in `packaging/` (see `packaging/README.md`): GitHub Actions
+  builds Windows, macOS and Linux bundles. Hands-on testing: Windows 11
+  works (VM); macOS and a clean Linux not yet. Windows/macOS have no
+  automatic reminders yet (systemd only); Task Scheduler / launchd later. Open: Linux
+  bundle needs system WebKitGTK (Flatpak/AppImage?), macOS `.icns`, and
+  signing/notarization. Decide Python bundle vs Tauri/Rust after testing.
 
 ## Notes
 

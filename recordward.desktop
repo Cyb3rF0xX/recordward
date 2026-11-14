@@ -4,6 +4,8 @@ Name=RecordWard
 Comment=Guard your own file — request your background-check / consumer-report records
 # Opens the native launcher window (first-run setup + Launch/Preferences).
 # Falls back to a terminal menu if no GUI toolkit is available.
+Icon=recordward
+StartupWMClass=recordward
 Exec=recordward app
 Terminal=false
 Categories=Utility;

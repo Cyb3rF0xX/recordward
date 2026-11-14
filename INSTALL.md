@@ -61,7 +61,9 @@ See the exact paths anytime with `recordward where`. Override the location with 
 ## Clickable launchers (optional)
 
 - **Linux:** `cp recordward.desktop ~/.local/share/applications/` then
-  search your app menu for "recordward".
+  search your app menu for "recordward". For the app icon, also copy
+  `recordward/assets/icon.svg` to
+  `~/.local/share/icons/hicolor/scalable/apps/recordward.svg`.
 - **macOS:** double-click `launchers/recordward.command` (you may need to
   right-click → Open the first time).
 - **Windows:** double-click `launchers/recordward.pyw` (runs without a console
@@ -81,17 +83,19 @@ recordward reset all                 # erase ALL local data
 The same settings and cleanup actions are available in the web app's
 **Settings** panel.
 
-## Standalone binary (advanced)
+## Ready-made app download (preview, no Python needed)
 
-To produce a single executable that doesn't require Python installed, use
-[PyInstaller](https://pyinstaller.org) on each target OS:
+Each release on the [Releases page](https://github.com/Cyb3rF0xX/recordward/releases)
+has a download for Windows (`.zip`), macOS (`.zip`) and Linux (`.tar.gz`).
+Unzip it and run `RecordWard` (Windows: `RecordWard.exe`).
 
-```bash
-pip install pyinstaller
-pyinstaller --onefile --name recordward \
-  --collect-submodules recordward \
-  -c "import sys; from recordward.core import main; main(sys.argv[1:])"
-```
+These builds are **unsigned** for now:
+- **Windows:** SmartScreen may warn "Windows protected your PC". Click
+  **More info**, then **Run anyway**.
+- **macOS:** the app is blocked the first time. Right-click it, choose
+  **Open**, then confirm (or allow it under System Settings > Privacy &
+  Security).
+- **Linux:** needs WebKitGTK installed (most GNOME/KDE desktops have it).
 
-Build on the OS you're targeting (PyInstaller does not cross-compile). The
-resulting binary lands in `dist/`.
+To build these yourself, see [packaging/README.md](packaging/README.md).
+Build on the OS you're targeting (PyInstaller does not cross-compile).

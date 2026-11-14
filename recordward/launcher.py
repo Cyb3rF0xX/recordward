@@ -20,9 +20,13 @@ import subprocess
 import sys
 import threading
 
+import logging
+
 from . import core
 from . import reminders as rem
 from . import settings as _settings
+
+core_log = logging.getLogger("recordward.launcher")
 
 
 # --------------------------------------------------------------------------
@@ -129,9 +133,89 @@ def run() -> None:
 # --------------------------------------------------------------------------
 # pywebview front-end (preferred, polished)
 # --------------------------------------------------------------------------
+def _clamp_to_screen(webview, width: int, height: int) -> tuple[int, int]:
+    """Limit a size to 90% of the primary screen when it can be read."""
+    try:
+        scr = webview.screens[0]
+        width = min(width, int(scr.width * 0.9))
+        height = min(height, int(scr.height * 0.9))
+    except Exception:
+        pass
+    return width, height
+
+
+_NAVIGATE_DELAY_S = 0.3
+
+
+def _grown_height(webview, current: int, extra_px) -> int:
+    """New window height: current + hidden content, capped to the screen."""
+    try:
+        extra = max(0, int(extra_px))
+    except (TypeError, ValueError):
+        extra = 0
+    _, max_h = _clamp_to_screen(webview, 0, 100000)
+    return min(int(current) + extra, max_h)
+
+
+def _open_dashboard(webview, url: str) -> None:
+    """Grow the compact launch window and point it at the dashboard."""
+    for w in list(webview.windows):
+        try:
+            # The launch screen is compact; the running app needs room for
+            # 2+ columns, so grow the window now.
+            aw, ah = _default_window_size(webview)
+            _resize_window(webview, w, aw, ah)
+            w.load_url(url)
+            break
+        except Exception:
+            core_log.exception("could not open the dashboard in the window")
+
+
+def _window_icon(platform: str | None = None) -> str:
+    """Icon file for the native window, in the format each backend accepts.
+
+    pywebview's Windows backend loads it with System.Drawing.Icon, which only
+    accepts .ico (a PNG crashes the app with ArgumentException). GTK/Qt/Cocoa
+    take PNG.
+    """
+    platform = platform or sys.platform
+    name = "icon.ico" if platform.startswith("win") else "icon-256.png"
+    return str(core.asset_path(name))
+
+
+def _launcher_window_size(webview) -> tuple[int, int]:
+    """Compact size for the launch screen (it only holds a small card)."""
+    w, h = _clamp_to_screen(webview, 480, 500)
+    return max(w, 380), max(h, 480)
+
+
+def _default_window_size(webview) -> tuple[int, int]:
+    """Size for the running app: wide enough for 2+ dashboard columns.
+
+    About 1100x780, clamped to the primary screen so small displays still get
+    a window that fits.
+    """
+    w, h = _clamp_to_screen(webview, 1100, 780)
+    return max(w, 700), max(h, 520)
+
+
+def _resize_window(webview, win, width: int, height: int, center: bool = True) -> None:
+    """Resize (and best-effort re-center) a window. Never raises."""
+    try:
+        win.resize(int(width), int(height))
+    except Exception:
+        return
+    if not center:
+        return
+    try:
+        scr = webview.screens[0]
+        win.move(max(0, (scr.width - width) // 2), max(0, (scr.height - height) // 2))
+    except Exception:
+        pass  # e.g. Wayland forbids client-side moves; the resize still applied
 def _run_webview(first_run: bool) -> None:
     import webview
 
+    state = {"max": False, "full": False}
     class Api:
         def get_status(self):
             return reminder_status()
@@ -147,13 +231,14 @@ def _run_webview(first_run: bool) -> None:
             # Open the dashboard INSIDE this native window (no browser tab).
             url = _start_server_for_window()
             if url:
-                # Point the existing launcher window at the dashboard URL.
-                for w in list(webview.windows):
-                    try:
-                        w.load_url(url)
-                        break
-                    except Exception:
-                        pass
+                # Navigate a moment AFTER returning. pywebview delivers this
+                # method's return value to the page's JS callback; navigating
+                # first destroys that callback and pywebview logs a
+                # JavascriptException ("_returnValuesCallbacks ... is not a
+                # function"), seen on Windows and Linux.
+                threading.Timer(
+                    _NAVIGATE_DELAY_S, _open_dashboard, args=(webview, url)
+                ).start()
                 return {"ok": True, "url": url}
             # Fallback: couldn't start the embedded server, use the browser.
             launch_app()
@@ -163,6 +248,54 @@ def _run_webview(first_run: bool) -> None:
         def quit(self):
             _close_all()
             return {"ok": True}
+        def fit_height(self, extra_px):
+            """Grow (never shrink) the launch window by the content height the
+            page reports as hidden, e.g. when Preferences or the setup wizard
+            opens. The page measures it, so this works whatever the OS counts
+            in the window height (Windows includes the title bar and borders).
+            """
+            if not webview.windows or state["max"] or state["full"]:
+                return {"ok": False}
+            try:
+                w = webview.windows[0]
+                want = _grown_height(webview, w.height, extra_px)
+                if want > w.height:
+                    _resize_window(webview, w, w.width, want, center=False)
+                return {"ok": True}
+            except Exception:
+                return {"ok": False}
+        def window_control(self, action):
+            """Minimize / maximize-restore / fullscreen, on any OS."""
+            if not webview.windows:
+                return {"ok": False}
+            w = webview.windows[0]
+            try:
+                if action == "minimize":
+                    w.minimize()
+                elif action == "fullscreen":
+                    w.toggle_fullscreen()
+                    state["full"] = not state["full"]
+                elif action == "maximize":
+                    if state["full"]:
+                        w.toggle_fullscreen()
+                        state["full"] = False
+                    elif state["max"]:
+                        w.restore()
+                        state["max"] = False
+                    else:
+                        w.maximize()
+                        state["max"] = True
+                elif action == "restore":
+                    if state["full"]:
+                        w.toggle_fullscreen()
+                        state["full"] = False
+                    w.restore()
+                    state["max"] = False
+                else:
+                    return {"ok": False}
+            except Exception:
+                return {"ok": False}
+            return {"ok": True, **state}
 
     def _close_all():
         for w in list(webview.windows):
@@ -173,16 +306,32 @@ def _run_webview(first_run: bool) -> None:
 
     api = Api()
     html = _launcher_html(first_run)
+    width, height = _launcher_window_size(webview)
     webview.create_window(
         "RecordWard",
         html=html,
         js_api=api,
-        width=480,
-        height=580,
+        width=width,
+        height=height,
         min_size=(380, 480),
         resizable=True,      # flows with window size; dashboard is responsive
     )
-    webview.start()
+    icon = _window_icon()
+    # Wayland/KDE/GNOME pick the title-bar and taskbar icon by matching the
+    # window app-id to an installed recordward.desktop (Icon=recordward), so
+    # name the GTK program accordingly. Harmless/no-op elsewhere.
+    try:
+        from gi.repository import GLib
+        GLib.set_prgname("recordward")
+        GLib.set_application_name("RecordWard")
+    except Exception:
+        pass
+    try:
+        # `icon` sets the title-bar/taskbar icon on GTK and Qt backends;
+        # Windows/macOS take it from the packaged app or are ignored.
+        webview.start(icon=icon)
+    except TypeError:
+        webview.start()  # older pywebview without the icon argument
 
 
 # --------------------------------------------------------------------------
@@ -194,6 +343,11 @@ def _run_tk(first_run: bool) -> None:
 
     root = tk.Tk()
     root.title("RecordWard")
+    try:
+        root._rw_icon = tk.PhotoImage(file=str(core.asset_path("icon-64.png")))
+        root.iconphoto(True, root._rw_icon)
+    except Exception:
+        pass  # icon is cosmetic; never block the launcher on it
     root.geometry("380x320")
 
     tk.Label(root, text="RecordWard", font=("", 18, "bold")).pack(pady=(18, 2))
@@ -294,19 +448,36 @@ def _launcher_html(first_run: bool) -> str:
         '<p class="muted">Automatic reminders need Linux + systemd; not '
         "available here. The app still shows what's due when you open it.</p>"
     )
+    # Only offer reminder choices where they can actually be scheduled.
+    if st["supported"]:
+        prefs_body = """<div class="opts">
+        <label><input type="radio" name="pcad" value="off"> No reminders</label>
+        <label><input type="radio" name="pcad" value="weekly"> Weekly</label>
+        <label><input type="radio" name="pcad" value="monthly"> Monthly</label>
+      </div>
+      <button class="btn" onclick="savePrefs()">Save reminders</button>
+      <p class="muted">To enable later from a terminal:
+        <code>recordward reminders set weekly</code></p>"""
+    else:
+        prefs_body = (
+            '<p class="muted" id="no-reminders">Automatic reminders aren\'t '
+            "available on this system yet (they currently need Linux with "
+            "systemd). Open RecordWard any time to see what's due.</p>"
+        )
     return f"""<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
 <style>
   :root {{ --bg:#0f1115; --panel:#171a21; --panel2:#1e222b; --text:#e6e8ec;
     --muted:#9aa3b2; --line:#2a2f3a; --accent:#5aa9ff; --ok:#4ade80; }}
   * {{ box-sizing:border-box; }}
-  body {{ margin:0; background:var(--bg); color:var(--text); text-align:center;
+  body {{ overflow-wrap:anywhere; margin:0; background:var(--bg); color:var(--text); text-align:center;
     font:15px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
     padding:28px 22px; }}
   h1 {{ margin:0; font-size:26px; letter-spacing:.5px; }}
+  .mark {{ margin:0 0 6px; line-height:0; }}
   .tag {{ color:var(--muted); font-size:13px; margin:2px 0 20px; }}
   .card {{ background:var(--panel); border:1px solid var(--line);
-    border-radius:14px; padding:20px; margin:0 auto; max-width:360px; }}
+    border-radius:14px; padding:20px; margin:0 auto 14px; max-width:360px; width:100%; min-width:0; }}
   h2 {{ font-size:15px; margin:0 0 12px; }}
   .btn {{ display:block; width:100%; text-align:center; text-decoration:none;
     background:var(--accent); color:#06101f; font-weight:700; border:none;
@@ -320,9 +491,11 @@ def _launcher_html(first_run: bool) -> str:
     margin:8px 0; cursor:pointer; }}
   .opts input {{ margin-right:10px; }}
   .muted {{ color:var(--muted); font-size:12px; }}
+  code {{ overflow-wrap:anywhere; }}
   .status {{ color:var(--muted); font-size:13px; margin:4px 0 14px; }}
   .status b {{ color:var(--ok); }}
 </style></head><body>
+  <div class="mark">{core.logo_svg(72)}</div>
   <h1>RecordWard</h1>
   <div class="tag">Guard your own file.</div>
 
@@ -345,14 +518,7 @@ def _launcher_html(first_run: bool) -> str:
     <button class="btn ghost" onclick="togglePrefs()">Preferences</button>
     <button class="btn ghost" onclick="api().quit()">Quit</button>
     <div id="prefs" style="display:none; margin-top:12px;">
-      <div class="opts">
-        <label><input type="radio" name="pcad" value="off"> No reminders</label>
-        <label><input type="radio" name="pcad" value="weekly"> Weekly</label>
-        <label><input type="radio" name="pcad" value="monthly"> Monthly</label>
-      </div>
-      <button class="btn" onclick="savePrefs()">Save reminders</button>
-      <p class="muted">To enable later from a terminal:
-        <code>recordward reminders set weekly</code></p>
+      {prefs_body}
     </div>
   </div>
 
@@ -374,10 +540,22 @@ def _launcher_html(first_run: bool) -> str:
     document.getElementById('wizard').style.display='none';
     document.getElementById('main').style.display='block';
     refresh();
+    fitWindow();
+  }}
+  // Ask the host to grow the compact launch window if content doesn't fit
+  // (Preferences panel, first-run wizard). Never shrinks.
+  function fitWindow() {{
+    try {{
+      if (api() && api().fit_height) {{
+        const extra = document.documentElement.scrollHeight - window.innerHeight;
+        if (extra > 0) api().fit_height(extra + 8);
+      }}
+    }} catch (e) {{}}
   }}
   function togglePrefs() {{
     const p = document.getElementById('prefs');
     p.style.display = p.style.display==='none' ? 'block' : 'none';
+    fitWindow();
   }}
   async function savePrefs() {{
     const v = document.querySelector('input[name=pcad]:checked').value;
@@ -387,5 +565,6 @@ def _launcher_html(first_run: bool) -> str:
   async function launch() {{ await api().launch(); }}
   window.addEventListener('pywebviewready', refresh);
   setTimeout(refresh, 300);
+  setTimeout(fitWindow, 400);
 </script>
 </body></html>"""

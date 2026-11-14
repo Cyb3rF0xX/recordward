@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="RecordWard">
+  <title>RecordWard</title>
+  <defs>
+    <linearGradient id="rw-shield-s" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#7cbcff"/>
+      <stop offset="1" stop-color="#3f8fe6"/>
+    </linearGradient>
+  </defs>
+  <!-- simplified for 16-32px: no tile, bigger shield, bold check, no page -->
+  <path d="M256 24 L476 104 V268 C476 398 388 470 256 508 C124 470 36 398 36 268 V104 Z"
+        fill="url(#rw-shield-s)"/>
+  <path d="M148 262 L226 340 L370 180" fill="none" stroke="#0f1115" stroke-width="56"
+        stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

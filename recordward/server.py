@@ -149,6 +149,7 @@ class Handler(BaseHTTPRequestHandler):
             "Content-Security-Policy",
             "default-src 'none'; "
             "style-src 'unsafe-inline'; "
+            "img-src data:; "
             f"script-src {script_src}; "
             "connect-src 'self'; "
             "form-action 'none'; "
