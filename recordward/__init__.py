@@ -3,4 +3,4 @@
 """RecordWard: regularly request your own background-check /
 consumer-report records (US / FCRA), locally and privately."""
 
-__version__ = "1.1.0"
+__version__ = "1.1.1.dev0"

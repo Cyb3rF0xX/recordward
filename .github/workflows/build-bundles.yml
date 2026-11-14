@@ -120,8 +120,12 @@ jobs:
           ---
           **Downloads (preview):** the Windows, macOS and Linux bundles below are
           unsigned. Windows shows a SmartScreen warning ("More info" > "Run
-          anyway"); macOS blocks unsigned apps by default. The Linux bundle needs
-          WebKitGTK installed. Python users can instead run `pipx install git+https://github.com/Cyb3rF0xX/recordward`.
+          anyway"). macOS blocks the app the first time: open System Settings >
+          Privacy & Security and click "Open Anyway". The Linux bundle needs
+          WebKitGTK installed. `SHA256SUMS.txt` lets you check a download (see
+          INSTALL.md). Python users can instead run `pipx install git+https://github.com/Cyb3rF0xX/recordward`.
           EOF
+          # Checksums so users can confirm a download arrived unaltered.
+          (cd assets && sha256sum -- * > SHA256SUMS.txt && cat SHA256SUMS.txt)
           gh release create "$TAG" --draft --verify-tag \
             --title "RecordWard $VER" --notes-file notes.md assets/*

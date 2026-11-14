@@ -3,6 +3,17 @@
 All notable changes to RecordWard are recorded here. Versions follow
 [semantic versioning](https://semver.org): MAJOR.MINOR.PATCH.
 
+## [Unreleased] (1.1.1.dev0)
+Planned as **1.1.1** until a change needs a bigger bump; see MAINTAINERS.md.
+
+Added
+- Each release includes `SHA256SUMS.txt` so you can check a download
+  (INSTALL.md shows how on each OS).
+
+Fixed
+- INSTALL.md: macOS first-run steps for macOS 15 and later (System Settings >
+  Privacy & Security > Open Anyway); right-click > Open no longer works there.
+
 ## [1.1.0] - 2026-11-14
 Added
 - **Larger app window:** the launch screen stays compact (about 480 px wide) and

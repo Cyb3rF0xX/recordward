@@ -64,8 +64,8 @@ See the exact paths anytime with `recordward where`. Override the location with 
   search your app menu for "recordward". For the app icon, also copy
   `recordward/assets/icon.svg` to
   `~/.local/share/icons/hicolor/scalable/apps/recordward.svg`.
-- **macOS:** double-click `launchers/recordward.command` (you may need to
-  right-click → Open the first time).
+- **macOS:** double-click `launchers/recordward.command`. If macOS blocks it
+  the first time, open **System Settings > Privacy & Security**, scroll to **Security**, click **Open Anyway** next to it, and confirm with your password.
 - **Windows:** double-click `launchers/recordward.pyw` (runs without a console
   window via the `.pyw` association).
 
@@ -92,10 +92,20 @@ Unzip it and run `RecordWard` (Windows: `RecordWard.exe`).
 These builds are **unsigned** for now:
 - **Windows:** SmartScreen may warn "Windows protected your PC". Click
   **More info**, then **Run anyway**.
-- **macOS:** the app is blocked the first time. Right-click it, choose
-  **Open**, then confirm (or allow it under System Settings > Privacy &
-  Security).
+- **macOS:** the first time, macOS says it can't verify the developer.
+  Click **Done**, then open **System Settings > Privacy & Security**, scroll to **Security**, click **Open Anyway** next to RecordWard, and confirm with your password. You only
+  do this once. (macOS 14 and older: right-click the app and choose
+  **Open** instead. macOS 15 removed that shortcut.)
 - **Linux:** needs WebKitGTK installed (most GNOME/KDE desktops have it).
+
+### Check your download (optional)
+
+Each release also has a `SHA256SUMS.txt` file. If the checksum of your
+download matches the line for that file, it arrived unaltered.
+
+- **Windows (PowerShell):** `Get-FileHash .\RecordWard-*-windows-x64.zip`
+- **macOS:** `shasum -a 256 RecordWard-*-macos.zip`
+- **Linux:** `sha256sum -c SHA256SUMS.txt --ignore-missing`
 
 To build these yourself, see [packaging/README.md](packaging/README.md).
 Build on the OS you're targeting (PyInstaller does not cross-compile).

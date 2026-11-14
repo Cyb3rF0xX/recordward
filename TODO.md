@@ -47,7 +47,15 @@ Known work items, roughly prioritized. Not yet implemented.
   users). Spike in `packaging/` (see `packaging/README.md`): GitHub Actions
   builds Windows, macOS and Linux bundles. Hands-on testing: Windows 11
   works (VM); macOS and a clean Linux not yet. Windows/macOS have no
-  automatic reminders yet (systemd only); Task Scheduler / launchd later. Open: Linux
+  automatic reminders yet (systemd only); Task Scheduler / launchd later.
+- [ ] **Code signing.** Plan (Nov 2026): ship unsigned with SHA256SUMS for
+  now. Next, apply to SignPath Foundation (free for OSI-licensed open source;
+  AGPLv3 qualifies) for Windows signing in the bundle workflow. Check its
+  terms first against any future paid/closed edition (it requires no
+  proprietary components). macOS: Apple Developer Program ($99/yr, includes
+  notarization) after the macOS bundle has been tested on a real Mac.
+  Fallback for Windows: Azure Artifact Signing (~$9.99/mo; individual
+  eligibility unclear). Open: Linux
   bundle needs system WebKitGTK (Flatpak/AppImage?), macOS `.icns`, and
   signing/notarization. Decide Python bundle vs Tauri/Rust after testing.
 
